@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="CE-3.5.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/jersey http://www.mulesoft.org/schema/mule/jersey/current/mule-jersey.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+    <http:connector name="NoSessionConnector" doc:name="HTTP-HTTPS">
+		<service-overrides sessionHandler="org.mule.session.NullSessionHandler"/>
+	</http:connector>
+    <flow name="save-encounter-mediationFlow1" doc:name="save-encounter-mediationFlow1">
+	    
+        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" doc:name="HTTP" responseTimeout="30000"/>
+        <cxf:proxy-service doc:name="CXF" payload="body" soapVersion="1.2" namespace="urn:ihe:iti:xds-b:2007" service="DocumentRepository_Service" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRepository.wsdl" mtomEnabled="true"/>
+        <set-property propertyName="SOAPAction" value = "urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b" doc:name="Add SOAP Action"/>
+        <response>
+            <logger message="#[groovy: message.getPayloadAsString()]" level="INFO" doc:name="Logger"/>
+        </response>
+        <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true"/>
+        <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="openshr-preprod.jembi.org" method="POST" path="openmrs/ms/xdsrepository" port="8080"/>
+    </flow>
+</mule>
