@@ -43,7 +43,7 @@
 									<pluginExecutionFilter>
 										<groupId>org.mule.tools</groupId>
 										<artifactId>maven-mule-plugin</artifactId>
-										<versionRange>[1.6,)</versionRange>
+										<version>1.9</version>
 										<goals>
 											<goal>attach-test-resources</goal>
 											<goal>filter-resources		</goal>
@@ -346,6 +346,11 @@
 			<artifactId>junit</artifactId>
 			<version>${junit.version}</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+		    <groupId>org.mockito</groupId>
+		    <artifactId>mockito-core</artifactId>
+		    <version>1.10.8</version>
 		</dependency>
 		
 		<!-- This is the core HAPI library -->

@@ -18,7 +18,7 @@ http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" doc:name="HTTP" responseTimeout="30000"/>
         <cxf:proxy-service doc:name="CXF" payload="body" soapVersion="1.2" namespace="urn:ihe:iti:xds-b:2007" service="DocumentRepository_Service" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRepository.wsdl" mtomEnabled="true"/>
         <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType"/>
-        <component class="org.openhim.mediator.xds.ValidateAndEnrichClient" doc:name="Java"/>
+        <component class="org.openhim.mediator.xds.XDSValidator" doc:name="Java"/>
         <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
         <set-property propertyName="SOAPAction" value = "urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b" doc:name="Add SOAP Action"/>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
