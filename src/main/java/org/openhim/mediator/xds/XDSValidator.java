@@ -23,17 +23,16 @@ import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.mule.MediatorMuleTransformer;
+import org.openhim.mediator.orchestration.exceptions.ClientValidationException;
 
 
 public class XDSValidator extends MediatorMuleTransformer {
 	
 	Logger log = Logger.getLogger(this.getClass());
+	
+	private String ecidAssigningAuthority;
 	private MuleClient client;
 	
-	public void setClient(MuleClient client) {
-		this.client = client;
-	}
-
 	public XDSValidator() throws MuleException {
 		setClient(new MuleClient(this.muleContext));
 	}
@@ -67,12 +66,15 @@ public class XDSValidator extends MediatorMuleTransformer {
 		String patId = submissionPatCX.substring(0, submissionPatCX.indexOf('^'));
 		String assigningAuthority = submissionPatCX.substring(submissionPatCX.indexOf('&') + 1, submissionPatCX.lastIndexOf('&'));
 		
+		String submissionECID = null;
 		try {
-			sendPIXMessage(patId, assigningAuthority);
+			submissionECID = sendPIXMessage(patId, assigningAuthority);
 		} catch (MuleException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.error(e);
 		}
+		
+		String newSubmissionPatCx = submissionECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
+		InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, newSubmissionPatCx, regPac);
 		
 		List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
 		for (ExtrinsicObjectType eo : eos) {
@@ -96,20 +98,29 @@ public class XDSValidator extends MediatorMuleTransformer {
 			try {
 				sendPIXMessage(docPatId, docAssigningAuthority);
 			} catch (MuleException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				log.error(e);
 			}
 		}
 	}
 
-	private Object sendPIXMessage(String patId, String assigningAuthority) throws MuleException {
+	private String sendPIXMessage(String patId, String assigningAuthority) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
 		idMap.put("id", patId);
 		idMap.put("idType", assigningAuthority);
 
 		MuleMessage response = client.send("vm://getecid-pix", idMap, null, 5000);
 		
-		return response.getPayload();
+		String success = response.getInboundProperty("success");
+		if (success != null && success.equals("true")) {
+			try {
+				return response.getPayloadAsString();
+			} catch (Exception ex) {
+				log.error(ex);
+				return null;
+			}
+		}
+		
+		return null;
 	}
 	
 	protected void validateProviderAndFacility(
@@ -143,6 +154,22 @@ public class XDSValidator extends MediatorMuleTransformer {
 			}
 		}
 		return classificationMaps;
+	}
+	
+	public String getEcidAssigningAuthority() {
+		return ecidAssigningAuthority;
+	}
+
+	public void setEcidAssigningAuthority(String ecidAssigningAuthority) {
+		this.ecidAssigningAuthority = ecidAssigningAuthority;
+	}
+	
+	public MuleClient getClient() {
+		return client;
+	}
+
+	public void setClient(MuleClient client) {
+		this.client = client;
 	}
 	
 }
