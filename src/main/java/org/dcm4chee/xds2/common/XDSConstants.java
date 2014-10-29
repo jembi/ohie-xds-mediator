@@ -171,6 +171,7 @@ public interface XDSConstants {
 
     //Slot names
     public static final String SLOT_NAME_AUTHOR_PERSON = "authorPerson";
+    public static final String SLOT_NAME_AUTHOR_INSTITUTION = "authorInstitution";
     public static final String SLOT_NAME_CREATION_TIME = "creationTime";
     public static final String SLOT_NAME_SERVICE_START_TIME = "serviceStartTime";
     public static final String SLOT_NAME_SERVICE_STOP_TIME = "serviceStopTime";

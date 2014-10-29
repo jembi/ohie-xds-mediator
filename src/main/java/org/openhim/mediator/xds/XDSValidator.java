@@ -95,17 +95,6 @@ public class XDSValidator extends MediatorMuleTransformer {
 			InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, newDocPatCx, eo);
 			
 			// TODO: Add to CDA identifier list
-			
-			List<Map<String, SlotType1>> authorClassSlots = null;
-			try {
-				authorClassSlots = this.getClassificationSlotsFromExtrinsicObject(XDSConstants.UUID_XDSDocumentEntry_author, eo);
-			} catch (JAXBException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-			for (Map<String, SlotType1> slotMap : authorClassSlots) {
-				
-			}
 		}
 	}
 
@@ -131,8 +120,70 @@ public class XDSValidator extends MediatorMuleTransformer {
 	
 	protected void validateProviderAndFacility(
 			ProvideAndRegisterDocumentSetRequestType pnr) {
-		// TODO Auto-generated method stub
+		List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
+		for (ExtrinsicObjectType eo : eos) {
+			List<Map<String, SlotType1>> authorClassSlots = null;
+			try {
+				authorClassSlots = this.getClassificationSlotsFromExtrinsicObject(XDSConstants.UUID_XDSDocumentEntry_author, eo);
+			} catch (JAXBException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			for (Map<String, SlotType1> slotMap : authorClassSlots) {
+				String epid = null;
+				String elid = null;
+				if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_PERSON)) {
+					SlotType1 personSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_PERSON);
+					String authorXCN = personSlot.getValueList().getValue().get(0);
+					String[] xcnComponents = authorXCN.split("\\^", -1);
+					
+					if (!xcnComponents[0].isEmpty()) {
+						epid = xcnComponents[0];
+					}
+				}
+				
+				if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_INSTITUTION)) {
+					SlotType1 institutionSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_INSTITUTION);
+					String authorXCN = institutionSlot.getValueList().getValue().get(0);
+					String[] xcnComponents = authorXCN.split("\\^", -1);
+					
+					if (!xcnComponents[9].isEmpty()) {
+						elid = xcnComponents[9];
+					}
+				}
+				
+				if (epid != null && elid != null) {
+					try {
+						boolean success = validateEpidElid(epid, elid);
+						
+						if (!success) {
+							// throw exception
+						}
+					} catch (MuleException e) {
+						log.error(e);
+					}
+				} else {
+					// What should we do??
+				}
+			}
+		}
 		
+	}
+
+	private boolean validateEpidElid(String epid, String elid)
+			throws MuleException {
+		Map<String, String> idMap = new HashMap<>();
+		idMap.put("epid", epid);
+		idMap.put("elid", elid);
+		
+		MuleMessage response = client.send("vm://validate-epid-elid", idMap, null, 5000);
+		
+		String success = response.getInboundProperty("success");
+		if (success != null && success.equals("true")) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	protected void validateTerminology(
