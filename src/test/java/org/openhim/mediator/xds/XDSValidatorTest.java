@@ -12,6 +12,7 @@ import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
@@ -19,6 +20,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 
 import org.dcm4chee.xds2.common.XDSConstants;
@@ -42,9 +44,9 @@ public class XDSValidatorTest {
 
 	@Test
 	public void validateAndEnrichClient_shouldSendExpectedPIXRequests() throws Exception {
+		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		
-		XDSValidator xdsValidator = configureXDSValidator();
+		XDSValidator xdsValidator = configureXDSValidatorForPix("1234567890");
 		
 		// when
 		xdsValidator.validateAndEnrichClient(pnr);
@@ -63,10 +65,9 @@ public class XDSValidatorTest {
 	
 	@Test
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForSubmissionSet() throws Exception {
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		
 		// given
-		XDSValidator xdsValidator = configureXDSValidator();
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		XDSValidator xdsValidator = configureXDSValidatorForPix("1234567890");
 		
 		// when
 		xdsValidator.validateAndEnrichClient(pnr);
@@ -76,13 +77,28 @@ public class XDSValidatorTest {
 		String submissionPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
 		assertEquals("1234567890^^^&amp;1.2.3&amp;ISO", submissionPatCX);
 	}
+	
+	@Test
+	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForDocumentEntries() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		XDSValidator xdsValidator = configureXDSValidatorForPix("1111111111");
+		
+		// when
+		xdsValidator.validateAndEnrichClient(pnr);
+		
+		// then
+		ExtrinsicObjectType eo = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest()).get(0);
+		String documentPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, eo);
+		assertEquals("1111111111^^^&amp;1.2.3&amp;ISO", documentPatCX);
+	}
 
-	private XDSValidator configureXDSValidator() throws Exception {
+	private XDSValidator configureXDSValidatorForPix(String ecidToReturn) throws Exception {
 		XDSValidator xdsValidator = new XDSValidator();
 		xdsValidator.setEcidAssigningAuthority("1.2.3");
 		MuleClient muleClient = mock(MuleClient.class);
 		MuleMessage mockMuleMessage = mock(MuleMessage.class);
-		when(mockMuleMessage.getPayloadAsString()).thenReturn("1234567890");
+		when(mockMuleMessage.getPayloadAsString()).thenReturn(ecidToReturn);
 		when(mockMuleMessage.getInboundProperty("success")).thenReturn("true");
 		when(muleClient.send(eq("vm://getecid-pix"), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
 		

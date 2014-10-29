@@ -84,6 +84,18 @@ public class XDSValidator extends MediatorMuleTransformer {
 			String docPatId = documentPatCX.substring(0, documentPatCX.indexOf('^'));
 			String docAssigningAuthority = documentPatCX.substring(documentPatCX.indexOf('&') + 1, documentPatCX.lastIndexOf('&'));
 			
+			String docECID = null;
+			try {
+				docECID = sendPIXMessage(docPatId, docAssigningAuthority);
+			} catch (MuleException e) {
+				log.error(e);
+			}
+			
+			String newDocPatCx = docECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
+			InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, newDocPatCx, eo);
+			
+			// TODO: Add to CDA identifier list
+			
 			List<Map<String, SlotType1>> authorClassSlots = null;
 			try {
 				authorClassSlots = this.getClassificationSlotsFromExtrinsicObject(XDSConstants.UUID_XDSDocumentEntry_author, eo);
@@ -93,12 +105,6 @@ public class XDSValidator extends MediatorMuleTransformer {
 			}
 			for (Map<String, SlotType1> slotMap : authorClassSlots) {
 				
-			}
-			
-			try {
-				sendPIXMessage(docPatId, docAssigningAuthority);
-			} catch (MuleException e) {
-				log.error(e);
 			}
 		}
 	}
