@@ -24,6 +24,7 @@ import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ClientValidationException;
+import org.openhim.mediator.orchestration.exceptions.ValidationException;
 
 
 public class XDSValidator extends MediatorMuleTransformer {
@@ -43,9 +44,13 @@ public class XDSValidator extends MediatorMuleTransformer {
 		
 		ProvideAndRegisterDocumentSetRequestType pnr = (ProvideAndRegisterDocumentSetRequestType) message.getPayload();
 		
-		validateAndEnrichClient(pnr);
-		validateProviderAndFacility(pnr);
-		validateTerminology(pnr);
+		try {
+			validateAndEnrichClient(pnr);
+			validateProviderAndFacility(pnr);
+			validateTerminology(pnr);
+		} catch (ValidationException e) {
+			throw new TransformerException(this, e);
+		}
 			
 		int size = pnr.getDocument().size();
 		log.info("Number of documents in this request: " + size);
@@ -119,19 +124,20 @@ public class XDSValidator extends MediatorMuleTransformer {
 	}
 	
 	protected void validateProviderAndFacility(
-			ProvideAndRegisterDocumentSetRequestType pnr) {
+			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {
 		List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
 		for (ExtrinsicObjectType eo : eos) {
 			List<Map<String, SlotType1>> authorClassSlots = null;
 			try {
 				authorClassSlots = this.getClassificationSlotsFromExtrinsicObject(XDSConstants.UUID_XDSDocumentEntry_author, eo);
-			} catch (JAXBException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (JAXBException e) {
+				log.error(e);
 			}
+			
+			String epid = null;
+			String elid = null;
 			for (Map<String, SlotType1> slotMap : authorClassSlots) {
-				String epid = null;
-				String elid = null;
+				
 				if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_PERSON)) {
 					SlotType1 personSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_PERSON);
 					String authorXCN = personSlot.getValueList().getValue().get(0);
@@ -147,24 +153,24 @@ public class XDSValidator extends MediatorMuleTransformer {
 					String authorXCN = institutionSlot.getValueList().getValue().get(0);
 					String[] xcnComponents = authorXCN.split("\\^", -1);
 					
-					if (!xcnComponents[9].isEmpty()) {
+					if (xcnComponents.length >= 10 && !xcnComponents[9].isEmpty()) {
 						elid = xcnComponents[9];
 					}
 				}
-				
-				if (epid != null && elid != null) {
-					try {
-						boolean success = validateEpidElid(epid, elid);
-						
-						if (!success) {
-							// throw exception
-						}
-					} catch (MuleException e) {
-						log.error(e);
+			}
+			
+			if (epid != null && elid != null) {
+				try {
+					boolean success = validateEpidElid(epid, elid);
+					
+					if (!success) {
+						throw new ValidationException("Query for provider and facility failed.");
 					}
-				} else {
-					// What should we do??
+				} catch (MuleException e) {
+					log.error(e);
 				}
+			} else {
+				throw new ValidationException("EPID and ELID could not be extracted from the CDS metadata");
 			}
 		}
 		

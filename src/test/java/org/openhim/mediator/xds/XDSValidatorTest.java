@@ -92,6 +92,18 @@ public class XDSValidatorTest {
 		String documentPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, eo);
 		assertEquals("1111111111^^^&amp;1.2.3&amp;ISO", documentPatCX);
 	}
+	
+	@Test
+	public void validateProviderAndFacility_shouldReturnOnSuccessfulValidation() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true);
+		
+		// when
+		xdsValidator.validateProviderAndFacility(pnr);
+		
+		// then no exception should be thrown
+	}
 
 	private XDSValidator configureXDSValidatorForPix(String ecidToReturn) throws Exception {
 		XDSValidator xdsValidator = new XDSValidator();
@@ -101,6 +113,18 @@ public class XDSValidatorTest {
 		when(mockMuleMessage.getPayloadAsString()).thenReturn(ecidToReturn);
 		when(mockMuleMessage.getInboundProperty("success")).thenReturn("true");
 		when(muleClient.send(eq("vm://getecid-pix"), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
+		
+		xdsValidator.setClient(muleClient);
+		return xdsValidator;
+	}
+	
+	private XDSValidator configureXDSValidatorForCSD(Boolean success) throws Exception {
+		XDSValidator xdsValidator = new XDSValidator();
+		xdsValidator.setEcidAssigningAuthority("1.2.3");
+		MuleClient muleClient = mock(MuleClient.class);
+		MuleMessage mockMuleMessage = mock(MuleMessage.class);
+		when(mockMuleMessage.getInboundProperty("success")).thenReturn(success.toString());
+		when(muleClient.send(eq("vm://validate-epid-elid"), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
 		
 		xdsValidator.setClient(muleClient);
 		return xdsValidator;

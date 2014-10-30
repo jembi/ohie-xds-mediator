@@ -53,8 +53,7 @@
                     </rim:Slot>
                     <rim:Slot name="authorInstitution">
                         <rim:ValueList>
-                            <rim:Value>Cleveland Clinic</rim:Value>
-                            <rim:Value>Parma Community</rim:Value>
+                            <rim:Value>Some Hospital^^^^^&amp;1.2.3.4.5.6.7.8.9.1789&amp;ISO^^^^45</rim:Value>
                         </rim:ValueList>
                     </rim:Slot>
                     <rim:Slot name="authorRole">
