@@ -12,7 +12,6 @@ import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
@@ -26,9 +25,9 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 import org.dcm4chee.xds2.common.XDSConstants;
 import org.dcm4chee.xds2.infoset.util.InfosetUtil;
 import org.junit.Test;
-import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.module.client.MuleClient;
+import org.openhim.mediator.orchestration.exceptions.ValidationException;
 
 public class XDSValidatorTest {
 	
@@ -103,6 +102,63 @@ public class XDSValidatorTest {
 		xdsValidator.validateProviderAndFacility(pnr);
 		
 		// then no exception should be thrown
+	}
+	
+	@Test
+	public void validateProviderAndFacility_shouldThrowValidationExceptionWhenNoEpid() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-epid.xml");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true);
+		
+		// when
+		try {
+			xdsValidator.validateProviderAndFacility(pnr);
+			
+		// then
+		} catch (ValidationException e) {
+			return;
+		}
+		
+		// else
+		fail();
+	}
+	
+	@Test
+	public void validateProviderAndFacility_shouldThrowValidationExceptionWhenNoElid() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-elid.xml");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true);
+		
+		// when
+		try {
+			xdsValidator.validateProviderAndFacility(pnr);
+			
+		// then
+		} catch (ValidationException e) {
+			return;
+		}
+		
+		// else
+		fail();
+	}
+	
+	@Test
+	public void validateProviderAndFacility_shouldThrowValidationExceptionIfCSDQueryNotSuccessful() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(false);
+		
+		// when
+		try {
+			xdsValidator.validateProviderAndFacility(pnr);
+			
+		// then
+		} catch (ValidationException e) {
+			return;
+		}
+		
+		// else
+		fail();
 	}
 
 	private XDSValidator configureXDSValidatorForPix(String ecidToReturn) throws Exception {

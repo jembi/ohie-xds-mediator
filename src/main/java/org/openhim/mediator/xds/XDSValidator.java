@@ -134,6 +134,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 				log.error(e);
 			}
 			
+			// TODO: This will end up picking the last epid and elid in the list, how should be handle multiple of these?
 			String epid = null;
 			String elid = null;
 			for (Map<String, SlotType1> slotMap : authorClassSlots) {
