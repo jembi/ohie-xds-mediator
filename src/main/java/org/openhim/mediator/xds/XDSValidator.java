@@ -14,7 +14,6 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.ClassificationType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 
 import org.apache.log4j.Logger;
 import org.dcm4chee.xds2.common.XDSConstants;
@@ -25,7 +24,6 @@ import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
-
 
 public class XDSValidator extends MediatorMuleTransformer {
 	
@@ -219,10 +217,8 @@ public class XDSValidator extends MediatorMuleTransformer {
 				} else {
 					throw new ValidationException("EPID and ELID could not be extracted from the CDS metadata");
 				}
-					
 			}
 		}
-		
 	}
 
 	private void setValListToELID(String localLocationName, List<String> institutionSlotValList,
@@ -247,6 +243,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 		return identifier + "^^^^^^^^&amp;" + assigingAuthority + "&amp;ISO";
 	}
 
+	@SuppressWarnings("unchecked")
 	private Map<String, String> getElid(String localLocationID) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
 		idMap.put("localFacilityId", localLocationID);
@@ -261,6 +258,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private Map<String, String> getEpid(String localProviderID) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
 		idMap.put("localProviderID", localProviderID);
@@ -275,6 +273,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private Map<String, String> getEpidElid(String localProviderID, String localLocationId)
 			throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
