@@ -14,6 +14,7 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.ClassificationType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 
 import org.apache.log4j.Logger;
 import org.dcm4chee.xds2.common.XDSConstants;
@@ -23,7 +24,6 @@ import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.mule.MediatorMuleTransformer;
-import org.openhim.mediator.orchestration.exceptions.ClientValidationException;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 
 
@@ -134,62 +134,160 @@ public class XDSValidator extends MediatorMuleTransformer {
 				log.error(e);
 			}
 			
-			// TODO: This will end up picking the last epid and elid in the list, how should be handle multiple of these?
-			String epid = null;
-			String elid = null;
 			for (Map<String, SlotType1> slotMap : authorClassSlots) {
+				
+				String localProviderID = null;
+				String localLocationID = null;
+				String localLocationName = null;
+				List<String> personSlotValList = null;
+				List<String> institutionSlotValList = null;
 				
 				if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_PERSON)) {
 					SlotType1 personSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_PERSON);
-					String authorXCN = personSlot.getValueList().getValue().get(0);
-					String[] xcnComponents = authorXCN.split("\\^", -1);
+					personSlotValList = personSlot.getValueList().getValue();
 					
-					if (!xcnComponents[0].isEmpty()) {
-						epid = xcnComponents[0];
+					// loop through all values and find the first one with an ID
+					for (String val : personSlotValList) {
+						String[] xcnComponents = val.split("\\^", -1);
+						
+						// if the identifier component exists
+						if (!xcnComponents[0].isEmpty()) {
+							localProviderID = xcnComponents[0];
+							break;
+						}
 					}
 				}
 				
 				if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_INSTITUTION)) {
 					SlotType1 institutionSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_INSTITUTION);
-					String authorXCN = institutionSlot.getValueList().getValue().get(0);
-					String[] xcnComponents = authorXCN.split("\\^", -1);
+					institutionSlotValList = institutionSlot.getValueList().getValue();
 					
-					if (xcnComponents.length >= 10 && !xcnComponents[9].isEmpty()) {
-						elid = xcnComponents[9];
+					// loop through all values and find the first one with an ID
+					for (String val : institutionSlotValList) {
+						String[] xonComponents = val.split("\\^", -1);
+						
+						// if the identifier component exists
+						if (xonComponents.length >= 10 && !xonComponents[9].isEmpty()) {
+							localLocationID = xonComponents[9];
+							localLocationName = xonComponents[0];
+						}
 					}
-				}
-			}
-			
-			if (epid != null && elid != null) {
-				try {
-					boolean success = validateEpidElid(epid, elid);
 					
-					if (!success) {
-						throw new ValidationException("Query for provider and facility failed.");
-					}
-				} catch (MuleException e) {
-					log.error(e);
 				}
-			} else {
-				throw new ValidationException("EPID and ELID could not be extracted from the CDS metadata");
+				
+				// if we have both IDs
+				if (localProviderID != null && localLocationID != null) {
+					try {
+						Map<String, String> enterpriseIDs = getEpidElid(localProviderID, localLocationID);
+						
+						if (enterpriseIDs == null) {
+							throw new ValidationException("Query for provider and facility failed.");
+						} else {
+							setValListToEPID(personSlotValList, enterpriseIDs);
+							setValListToELID(localLocationName, institutionSlotValList, enterpriseIDs);
+						}
+					} catch (MuleException e) {
+						log.error(e);
+						throw new ValidationException("Query for provider and facility failed.", e);
+					}
+				} else if (localProviderID != null) { // if we just have a local provider ID
+					try {
+						Map<String, String> enterpriseIDs = getEpid(localProviderID);
+						
+						if (enterpriseIDs == null) {
+							throw new ValidationException("Query for provider failed.");
+						} else {
+							setValListToEPID(personSlotValList, enterpriseIDs);
+						}
+					} catch (MuleException e) {
+						log.error(e);
+						throw new ValidationException("Query for provider failed.", e);
+					}
+				} else if (localLocationID != null) { // if we just have a local location ID
+					try {
+						Map<String, String> enterpriseIDs = getElid(localLocationID);
+						
+						if (enterpriseIDs == null) {
+							throw new ValidationException("Query for location failed.");
+						} else {
+							setValListToELID(localLocationName, institutionSlotValList, enterpriseIDs);
+						}
+					} catch (MuleException e) {
+						log.error(e);
+						throw new ValidationException("Query for location failed.", e);
+					}
+				} else {
+					throw new ValidationException("EPID and ELID could not be extracted from the CDS metadata");
+				}
+					
 			}
 		}
 		
 	}
 
-	private boolean validateEpidElid(String epid, String elid)
-			throws MuleException {
+	private void setValListToELID(String localLocationName, List<String> institutionSlotValList,
+			Map<String, String> enterpriseIDs) {
+		String newInstitutionXON = createXON(localLocationName, enterpriseIDs.get("elid"), enterpriseIDs.get("elidAssigningAuthorityId"));
+		institutionSlotValList.clear();
+		institutionSlotValList.add(newInstitutionXON);
+	}
+
+	private void setValListToEPID(List<String> personSlotValList,
+			Map<String, String> enterpriseIDs) {
+		String newPersonXCN = createXCN(enterpriseIDs.get("epid"), enterpriseIDs.get("epidAssigningAuthorityId"));
+		personSlotValList.clear();
+		personSlotValList.add(newPersonXCN);
+	}
+
+	protected String createXON(String organisationName, String identifier, String assigingAuthority) {
+		return organisationName + "^^^^^&amp;" + assigingAuthority + "&amp;ISO" + "^^^^" + identifier;
+	}
+
+	protected String createXCN(String identifier, String assigingAuthority) {
+		return identifier + "^^^^^^^^&amp;" + assigingAuthority + "&amp;ISO";
+	}
+
+	private Map<String, String> getElid(String localLocationID) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
-		idMap.put("epid", epid);
-		idMap.put("elid", elid);
+		idMap.put("localFacilityId", localLocationID);
 		
-		MuleMessage response = client.send("vm://validate-epid-elid", idMap, null, 5000);
+		MuleMessage response = client.send("vm://get-elid", idMap, null, 5000);
 		
 		String success = response.getInboundProperty("success");
 		if (success != null && success.equals("true")) {
-			return true;
+			return (Map<String, String>) response.getPayload();
 		} else {
-			return false;
+			return null;
+		}
+	}
+
+	private Map<String, String> getEpid(String localProviderID) throws MuleException {
+		Map<String, String> idMap = new HashMap<>();
+		idMap.put("localProviderID", localProviderID);
+		
+		MuleMessage response = client.send("vm://get-epid", idMap, null, 5000);
+		
+		String success = response.getInboundProperty("success");
+		if (success != null && success.equals("true")) {
+			return (Map<String, String>) response.getPayload();
+		} else {
+			return null;
+		}
+	}
+
+	private Map<String, String> getEpidElid(String localProviderID, String localLocationId)
+			throws MuleException {
+		Map<String, String> idMap = new HashMap<>();
+		idMap.put("localProviderID", localProviderID);
+		idMap.put("localFacilityId", localLocationId);
+		
+		MuleMessage response = client.send("vm://get-epid-elid", idMap, null, 5000);
+		
+		String success = response.getInboundProperty("success");
+		if (success != null && success.equals("true")) {
+			return (Map<String, String>) response.getPayload();
+		} else {
+			return null;
 		}
 	}
 	
@@ -207,7 +305,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 	 * objects keyed by their slot name.
 	 * @throws JAXBException
 	 */
-	private List<Map<String, SlotType1>> getClassificationSlotsFromExtrinsicObject(String classificationScheme, ExtrinsicObjectType eo) throws JAXBException {
+	protected List<Map<String, SlotType1>> getClassificationSlotsFromExtrinsicObject(String classificationScheme, ExtrinsicObjectType eo) throws JAXBException {
 		List<ClassificationType> classifications = eo.getClassification();
 		
 		List<Map<String, SlotType1>> classificationMaps = new ArrayList<Map<String, SlotType1>>();

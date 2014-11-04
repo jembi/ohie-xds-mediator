@@ -12,6 +12,7 @@ import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBContext;
@@ -21,10 +22,12 @@ import javax.xml.bind.Unmarshaller;
 
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
+import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
 
 import org.dcm4chee.xds2.common.XDSConstants;
 import org.dcm4chee.xds2.infoset.util.InfosetUtil;
 import org.junit.Test;
+import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
@@ -45,7 +48,7 @@ public class XDSValidatorTest {
 	public void validateAndEnrichClient_shouldSendExpectedPIXRequests() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForPix("1234567890");
+		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
 		xdsValidator.validateAndEnrichClient(pnr);
@@ -66,7 +69,7 @@ public class XDSValidatorTest {
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForSubmissionSet() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForPix("1234567890");
+		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
 		xdsValidator.validateAndEnrichClient(pnr);
@@ -81,7 +84,7 @@ public class XDSValidatorTest {
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForDocumentEntries() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForPix("1111111111");
+		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1111111111");
 		
 		// when
 		xdsValidator.validateAndEnrichClient(pnr);
@@ -96,7 +99,7 @@ public class XDSValidatorTest {
 	public void validateProviderAndFacility_shouldReturnOnSuccessfulValidation() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true);
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-epid-elid");
 		
 		// when
 		xdsValidator.validateProviderAndFacility(pnr);
@@ -105,48 +108,34 @@ public class XDSValidatorTest {
 	}
 	
 	@Test
-	public void validateProviderAndFacility_shouldThrowValidationExceptionWhenNoEpid() throws Exception {
+	public void validateProviderAndFacility_shouldOnlyCallGetElidWhenNoEpidIsSupplied() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-epid.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true);
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-elid");
 		
 		// when
-		try {
-			xdsValidator.validateProviderAndFacility(pnr);
+		xdsValidator.validateProviderAndFacility(pnr);
 			
-		// then
-		} catch (ValidationException e) {
-			return;
-		}
-		
-		// else
-		fail();
+		// then no exception is thrown
 	}
 	
 	@Test
-	public void validateProviderAndFacility_shouldThrowValidationExceptionWhenNoElid() throws Exception {
+	public void validateProviderAndFacility_shouldOnlyCallGetEpidWhenNoElidIsSupplied() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-elid.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true);
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-epid");
 		
 		// when
-		try {
-			xdsValidator.validateProviderAndFacility(pnr);
+		xdsValidator.validateProviderAndFacility(pnr);
 			
-		// then
-		} catch (ValidationException e) {
-			return;
-		}
-		
-		// else
-		fail();
+		// then no exception is thrown
 	}
 	
 	@Test
 	public void validateProviderAndFacility_shouldThrowValidationExceptionIfCSDQueryNotSuccessful() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(false);
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(false, null, "vm://get-epid-elid");
 		
 		// when
 		try {
@@ -160,27 +149,122 @@ public class XDSValidatorTest {
 		// else
 		fail();
 	}
+	
+	@Test
+	public void validateProviderAndFacility_shouldEnrichPNRWithEPID() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		Map<String, String> map = new HashMap<>();
+		map.put("epid", "123456789");
+		map.put("epidAssigningAuthorityId", "1.2.3");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, map, "vm://get-epid-elid");
+		
+		// when
+		try {
+			xdsValidator.validateProviderAndFacility(pnr);
+			
+			// then
+			List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
+			for (ExtrinsicObjectType eo : eos) {
+				List<Map<String, SlotType1>> authorClassSlots = null;
+				try {
+					authorClassSlots = xdsValidator.getClassificationSlotsFromExtrinsicObject(XDSConstants.UUID_XDSDocumentEntry_author, eo);
+				} catch (JAXBException e) {
+					fail(e.getMessage());
+				}
+				
+				for (Map<String, SlotType1> slotMap : authorClassSlots) {
+					if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_PERSON)) {
+						SlotType1 personSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_PERSON);
+						List<String> valueList = personSlot.getValueList().getValue();
+						
+						for (String val : valueList) {
+							assertEquals("123456789^^^^^^^^&amp;1.2.3&amp;ISO", val);
+						}
+					}
+				}
+			}
+		} catch (ValidationException e) {
+			fail(e.getMessage());
+		}
+	}
+	
+	@Test
+	public void validateProviderAndFacility_shouldEnrichPNRWithELID() throws Exception {
+		// given
+		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		Map<String, String> map = new HashMap<>();
+		map.put("elid", "53");
+		map.put("elidAssigningAuthorityId", "1.2.3");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, map, "vm://get-epid-elid");
+		
+		// when
+		try {
+			xdsValidator.validateProviderAndFacility(pnr);
+			
+			// then
+			List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
+			for (ExtrinsicObjectType eo : eos) {
+				List<Map<String, SlotType1>> authorClassSlots = null;
+				try {
+					authorClassSlots = xdsValidator.getClassificationSlotsFromExtrinsicObject(XDSConstants.UUID_XDSDocumentEntry_author, eo);
+				} catch (JAXBException e) {
+					fail(e.getMessage());
+				}
+				
+				for (Map<String, SlotType1> slotMap : authorClassSlots) {
+					if (slotMap.containsKey(XDSConstants.SLOT_NAME_AUTHOR_INSTITUTION)) {
+						SlotType1 institutionSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_INSTITUTION);
+						List<String> valueList = institutionSlot.getValueList().getValue();
+						
+						for (String val : valueList) {
+							assertTrue(val.contains("^^^^^&amp;1.2.3&amp;ISO^^^^53"));
+						}
+					}
+				}
+			}
+		} catch (ValidationException e) {
+			fail(e.getMessage());
+		}
+	}
+	
+	@Test
+	public void createXON_shouldCreateAValidXON() throws MuleException {
+		XDSValidator xdsValidator = new XDSValidator();
+		String xon = "Some Hospital^^^^^&amp;1.2.3.4.5.6.7.8.9.1789&amp;ISO^^^^45";
+		String xonResult = xdsValidator.createXON("Some Hospital", "45", "1.2.3.4.5.6.7.8.9.1789");
+		assertEquals(xon, xonResult);
+	}
+	
+	@Test
+	public void createXCN_shouldCreateAValidXCN() throws MuleException {
+		XDSValidator xdsValidator = new XDSValidator();
+		String xcn = "11375^^^^^^^^&amp;1.2.840.113619.6.197&amp;ISO";
+		String xcnResult = xdsValidator.createXCN("11375", "1.2.840.113619.6.197");
+		assertEquals(xcn, xcnResult);
+	}
 
-	private XDSValidator configureXDSValidatorForPix(String ecidToReturn) throws Exception {
+	private XDSValidator configureXDSValidatorForPix(Boolean success, String ecidToReturn) throws Exception {
 		XDSValidator xdsValidator = new XDSValidator();
 		xdsValidator.setEcidAssigningAuthority("1.2.3");
 		MuleClient muleClient = mock(MuleClient.class);
 		MuleMessage mockMuleMessage = mock(MuleMessage.class);
 		when(mockMuleMessage.getPayloadAsString()).thenReturn(ecidToReturn);
-		when(mockMuleMessage.getInboundProperty("success")).thenReturn("true");
+		when(mockMuleMessage.getInboundProperty("success")).thenReturn(success.toString());
 		when(muleClient.send(eq("vm://getecid-pix"), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
 		
 		xdsValidator.setClient(muleClient);
 		return xdsValidator;
 	}
 	
-	private XDSValidator configureXDSValidatorForCSD(Boolean success) throws Exception {
+	private XDSValidator configureXDSValidatorForCSD(Boolean success, Map<String, String> mapToReturn, String  vmQueue) throws Exception {
 		XDSValidator xdsValidator = new XDSValidator();
 		xdsValidator.setEcidAssigningAuthority("1.2.3");
 		MuleClient muleClient = mock(MuleClient.class);
 		MuleMessage mockMuleMessage = mock(MuleMessage.class);
+		when(mockMuleMessage.getPayload()).thenReturn(mapToReturn);
 		when(mockMuleMessage.getInboundProperty("success")).thenReturn(success.toString());
-		when(muleClient.send(eq("vm://validate-epid-elid"), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
+		when(muleClient.send(eq(vmQueue), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
 		
 		xdsValidator.setClient(muleClient);
 		return xdsValidator;

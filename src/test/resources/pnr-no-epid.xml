@@ -48,7 +48,7 @@
                     id="id_1">
                     <rim:Slot name="authorPerson">
                         <rim:ValueList>
-                            <rim:Value>pro111^Smitty^Gerald^^^</rim:Value>
+                            <rim:Value>^Smitty^Gerald^^^</rim:Value>
                         </rim:ValueList>
                     </rim:Slot>
                     <rim:Slot name="authorInstitution">
@@ -59,33 +59,6 @@
                     <rim:Slot name="authorRole">
                         <rim:ValueList>
                             <rim:Value>Attending</rim:Value>
-                        </rim:ValueList>
-                    </rim:Slot>
-                    <rim:Slot name="authorSpecialty">
-                        <rim:ValueList>
-                            <rim:Value>Orthopedic</rim:Value>
-                        </rim:ValueList>
-                    </rim:Slot>
-                </rim:Classification>
-                <rim:Classification
-                    classificationScheme="urn:uuid:93606bcf-9494-43ec-9b4e-a7748d1a838d"
-                    classifiedObject="Document01" nodeRepresentation=""
-                    objectType="urn:oasis:names:tc:ebxml-regrep:ObjectType:RegistryObject:Classification"
-                    id="id_2">
-                    <rim:Slot name="authorPerson">
-                        <rim:ValueList>
-                            <rim:Value>pro112^Dopplemeyer^Sherry^^^</rim:Value>
-                        </rim:ValueList>
-                    </rim:Slot>
-                    <rim:Slot name="authorInstitution">
-                        <rim:ValueList>
-                            <rim:Value>Cleveland Clinic</rim:Value>
-                            <rim:Value>Another Hospital^^^^^&amp;1.2.3.4.5.6.7.8.9.1789&amp;ISO^^^^53</rim:Value>
-                        </rim:ValueList>
-                    </rim:Slot>
-                    <rim:Slot name="authorRole">
-                        <rim:ValueList>
-                            <rim:Value>Primary Surgeon</rim:Value>
                         </rim:ValueList>
                     </rim:Slot>
                     <rim:Slot name="authorSpecialty">
