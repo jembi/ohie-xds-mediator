@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ClassificationType;
@@ -18,45 +19,48 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
 import org.apache.log4j.Logger;
 import org.dcm4chee.xds2.common.XDSConstants;
 import org.dcm4chee.xds2.infoset.util.InfosetUtil;
+import org.mule.api.MuleContext;
+import org.mule.api.MuleEventContext;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
+import org.mule.api.lifecycle.Callable;
 import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
-import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 
-public class XDSValidator extends MediatorMuleTransformer {
+public class XDSValidator implements Callable {
 	
 	Logger log = Logger.getLogger(this.getClass());
 	
 	private String ecidAssigningAuthority;
 	private MuleClient client;
 	
-	public XDSValidator() throws MuleException {
-		setClient(new MuleClient(this.muleContext));
+	@Override
+	public Object onCall(MuleEventContext eventContext) throws Exception {
+		MuleContext muleContext = eventContext.getMuleContext();
+		this.setClient(new MuleClient(muleContext));
+		MuleMessage msg = eventContext.getMessage();
+		ProvideAndRegisterDocumentSetRequestType pnr = (ProvideAndRegisterDocumentSetRequestType) msg.getPayload();
+		
+		JAXBElement<ProvideAndRegisterDocumentSetRequestType> newPNR = validateAndEnrichPNR(pnr);
+		msg.setPayload(newPNR);
+		
+		return msg;
 	}
 	
-	@Override
-	public Object transformMessage(MuleMessage message, String outputEncoding)
-			throws TransformerException {
+	public JAXBElement<ProvideAndRegisterDocumentSetRequestType> validateAndEnrichPNR(ProvideAndRegisterDocumentSetRequestType pnr)
+			throws ValidationException {
 		
-		ProvideAndRegisterDocumentSetRequestType pnr = (ProvideAndRegisterDocumentSetRequestType) message.getPayload();
-		
-		try {
-			validateAndEnrichClient(pnr);
-			validateProviderAndFacility(pnr);
-			validateTerminology(pnr);
-		} catch (ValidationException e) {
-			throw new TransformerException(this, e);
-		}
+		validateAndEnrichClient(pnr);
+		validateProviderAndFacility(pnr);
+		validateTerminology(pnr);
 			
 		int size = pnr.getDocument().size();
 		log.info("Number of documents in this request: " + size);
 		
 		ObjectFactory of = new ObjectFactory();
-		message.setPayload(of.createProvideAndRegisterDocumentSetRequest(pnr));
 
-		return message;
+		return of.createProvideAndRegisterDocumentSetRequest(pnr);
 	}
 
 	protected void validateAndEnrichClient(
