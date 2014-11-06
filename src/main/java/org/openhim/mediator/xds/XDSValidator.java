@@ -149,7 +149,9 @@ public class XDSValidator implements Callable {
 			for (Map<String, SlotType1> slotMap : authorClassSlots) {
 				
 				String localProviderID = null;
+				String localProviderIDAssigningAuthority = null;
 				String localLocationID = null;
+				String localLocationIDAssigningAuthority = null;
 				String localLocationName = null;
 				List<String> personSlotValList = null;
 				List<String> institutionSlotValList = null;
@@ -163,8 +165,9 @@ public class XDSValidator implements Callable {
 						String[] xcnComponents = val.split("\\^", -1);
 						
 						// if the identifier component exists
-						if (!xcnComponents[0].isEmpty()) {
+						if (!xcnComponents[0].isEmpty() && !xcnComponents[8].isEmpty()) {
 							localProviderID = xcnComponents[0];
+							localProviderIDAssigningAuthority = xcnComponents[8].substring(xcnComponents[8].indexOf('&') +1 , xcnComponents[8].lastIndexOf('&'));
 							break;
 						}
 					}
@@ -179,9 +182,10 @@ public class XDSValidator implements Callable {
 						String[] xonComponents = val.split("\\^", -1);
 						
 						// if the identifier component exists
-						if (xonComponents.length >= 10 && !xonComponents[9].isEmpty()) {
+						if (xonComponents.length >= 10 && !xonComponents[5].isEmpty() && !xonComponents[9].isEmpty()) {
 							localLocationID = xonComponents[9];
 							localLocationName = xonComponents[0];
+							localLocationIDAssigningAuthority = xonComponents[5].substring(xonComponents[5].indexOf('&') +1 , xonComponents[5].lastIndexOf('&'));
 						}
 					}
 					
@@ -190,7 +194,7 @@ public class XDSValidator implements Callable {
 				// if we have both IDs
 				if (localProviderID != null && localLocationID != null) {
 					try {
-						Map<String, String> enterpriseIDs = getEpidElid(localProviderID, localLocationID);
+						Map<String, String> enterpriseIDs = getEpidElid(localProviderID, localProviderIDAssigningAuthority, localLocationID, localLocationIDAssigningAuthority);
 						
 						if (enterpriseIDs == null) {
 							throw new ValidationException("Query for provider and facility failed.");
@@ -288,11 +292,13 @@ public class XDSValidator implements Callable {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, String> getEpidElid(String localProviderID, String localLocationId)
+	private Map<String, String> getEpidElid(String localProviderID, String localProviderIDAssigningAuthority, String localLocationID, String localLocationIDAssigningAuthority)
 			throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
 		idMap.put("localProviderID", localProviderID);
-		idMap.put("localLocationId", localLocationId);
+		idMap.put("localLocationID", localLocationID);
+		idMap.put("localProviderIDAssigningAuthority", localProviderIDAssigningAuthority);
+		idMap.put("localLocationIDAssigningAuthority", localLocationIDAssigningAuthority);
 		
 		MuleMessage response = client.send("vm://get-epid-elid", idMap, null, 5000);
 		

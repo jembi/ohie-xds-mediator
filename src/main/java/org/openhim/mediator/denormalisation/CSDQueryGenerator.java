@@ -15,14 +15,17 @@ public class CSDQueryGenerator extends AbstractMessageTransformer {
 		Map<String, String> idMap = (Map<String, String>) message.getPayload();
 		
 		String localProviderID = idMap.get("localProviderID");
-		String localLocationId = idMap.get("localLocationId");
+		String localLocationID = idMap.get("localLocationID");
+		String localProviderIDAssigningAuthority = idMap.get("localProviderIDAssigningAuthority");
+		String localLocationIDAssigningAuthority = idMap.get("localLocationIDAssigningAuthority");
 		
 		String csdTemplate = "<csd:careServicesRequest xmlns='urn:ihe:iti:csd:2013' xmlns:csd='urn:ihe:iti:csd:2013'>"
 				+ "	<function uuid='4e8bbeb9-f5f5-11e2-b778-0800200c9a66'>"
 				+ "		<requestParams>"
-				+ "			<id oid='" + localProviderID + "'/>"
+				//+ "			<id oid='" + localProviderID + "'/>"
+				+ "			<otherID code='" + localProviderID + "' assigningAuthorityName='" + localProviderIDAssigningAuthority + "'/>"
 				+ "			<facilities>"
-				+ "				<facility oid='" + localLocationId + "'/>"
+				+ "				<facility oid='" + localLocationID + "'/>"
 				+ "			</facilities>"
 				+ "		</requestParams>"
 				+ "	</function>"
