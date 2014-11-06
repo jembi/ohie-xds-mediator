@@ -60,7 +60,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 	}
 
 	protected void validateAndEnrichClient(
-			ProvideAndRegisterDocumentSetRequestType pnr) {
+			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {
 		
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
 		String submissionPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
@@ -72,8 +72,13 @@ public class XDSValidator extends MediatorMuleTransformer {
 		String submissionECID = null;
 		try {
 			submissionECID = sendPIXMessage(patId, assigningAuthority);
+			
+			if (submissionECID == null) {
+				throw new ValidationException("Query for client submission set ecid failed.");
+			}
 		} catch (MuleException e) {
 			log.error(e);
+			throw new ValidationException("Query for client submission set ecid failed.", e);
 		}
 		
 		String newSubmissionPatCx = submissionECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
@@ -90,8 +95,13 @@ public class XDSValidator extends MediatorMuleTransformer {
 			String docECID = null;
 			try {
 				docECID = sendPIXMessage(docPatId, docAssigningAuthority);
+				
+				if (docECID == null) {
+					throw new ValidationException("Query for client document entry ecid failed.");
+				}
 			} catch (MuleException e) {
 				log.error(e);
+				throw new ValidationException("Query for client document entry ecid failed.", e);
 			}
 			
 			String newDocPatCx = docECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
@@ -278,7 +288,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 			throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
 		idMap.put("localProviderID", localProviderID);
-		idMap.put("localFacilityId", localLocationId);
+		idMap.put("localLocationId", localLocationId);
 		
 		MuleMessage response = client.send("vm://get-epid-elid", idMap, null, 5000);
 		
