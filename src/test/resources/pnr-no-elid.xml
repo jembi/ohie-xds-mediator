@@ -48,7 +48,7 @@
                     id="id_1">
                     <rim:Slot name="authorPerson">
                         <rim:ValueList>
-                            <rim:Value>987654321^Smitty^Gerald^^^</rim:Value>
+                            <rim:Value>987654321^Smitty^Gerald^^^^^^&amp;1.2.3&amp;ISO</rim:Value>
                         </rim:ValueList>
                     </rim:Slot>
                     <rim:Slot name="authorInstitution">

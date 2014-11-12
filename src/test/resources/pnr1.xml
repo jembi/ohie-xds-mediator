@@ -48,7 +48,7 @@
                     id="id_1">
                     <rim:Slot name="authorPerson">
                         <rim:ValueList>
-                            <rim:Value>pro111^Smitty^Gerald^^^</rim:Value>
+                            <rim:Value>pro111^Smitty^Gerald^^^^^^&amp;1.2.3&amp;ISO</rim:Value>
                         </rim:ValueList>
                     </rim:Slot>
                     <rim:Slot name="authorInstitution">
@@ -74,7 +74,7 @@
                     id="id_2">
                     <rim:Slot name="authorPerson">
                         <rim:ValueList>
-                            <rim:Value>pro112^Dopplemeyer^Sherry^^^</rim:Value>
+                            <rim:Value>pro112^Dopplemeyer^Sherry^^^^^^&amp;1.2.3&amp;ISO</rim:Value>
                         </rim:ValueList>
                     </rim:Slot>
                     <rim:Slot name="authorInstitution">
