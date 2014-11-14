@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+<mule xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" version="CE-3.5.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+	xsi:schemaLocation="
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
 http://www.mulesoft.org/schema/mule/jersey http://www.mulesoft.org/schema/mule/jersey/current/mule-jersey.xsd
 http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+	<context:property-placeholder location="classpath:xds-mediator.properties, classpath:xds-mediator-override.properties"/>
     <http:connector name="NoSessionConnector" doc:name="HTTP-HTTPS">
 		<service-overrides sessionHandler="org.mule.session.NullSessionHandler"/>
 	</http:connector>
@@ -24,6 +27,6 @@ http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true"/>
         <logger message="Sending HTTP request" level="INFO" doc:name="Logger"/>
-        <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="openshr-preprod.jembi.org" method="POST" path="openmrs/ms/xdsrepository" port="8080"/>
+        <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="${xds.repository.host}" method="POST" path="${xds.repository.path}" port="${xds.repository.port}"/>
     </flow>
 </mule>

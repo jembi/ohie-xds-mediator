@@ -160,7 +160,7 @@ public class XDSValidator implements Callable {
 					SlotType1 personSlot = slotMap.get(XDSConstants.SLOT_NAME_AUTHOR_PERSON);
 					personSlotValList = personSlot.getValueList().getValue();
 					
-					// loop through all values and find the first one with an ID
+					// loop through all values and find the first one with an ID and assigning authority
 					for (String val : personSlotValList) {
 						String[] xcnComponents = val.split("\\^", -1);
 						

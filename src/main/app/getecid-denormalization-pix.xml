@@ -20,7 +20,6 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
         <logger message="In getecid de-normalization #[groovy: message.toString()]" level="INFO" doc:name="Logger"/>
         <component class="org.openhim.mediator.ATNADispatchAuditMessage" doc:name="Send Mohawk Visualizer Message"/>
         <custom-transformer class="org.openhim.mediator.denormalisation.PIXQueryGenerator" doc:name="Generate PIX Query">
-            <spring:property name="assigningAuthorityId" value="${pix.assigningAuthorityId}"/>
             <spring:property name="requestedAssigningAuthority" value="${pix.requestedAssigningAuthority}"/>
             <spring:property name="requestedAssigningAuthorityId" value="${pix.requestedAssigningAuthorityId}"/>
             <spring:property name="sendingApplication" value="${pix.sendingApplication}"/>

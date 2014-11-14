@@ -27,7 +27,6 @@ public class PIXQueryGenerator  extends AbstractMessageTransformer {
 	
 	private String _msh10;
 	
-	private String assigningAuthorityId = "";
 	private String requestedAssigningAuthority = "";
 	private String requestedAssigningAuthorityId = "";
 	private String sendingApplication = "";
@@ -47,7 +46,7 @@ public class PIXQueryGenerator  extends AbstractMessageTransformer {
 		
 		String pix_query;
 		try {
-			pix_query = constructPIXQuery(id, idType, assigningAuthorityId, requestedAssigningAuthority, requestedAssigningAuthorityId);
+			pix_query = constructPIXQuery(id, "", idType, requestedAssigningAuthority, requestedAssigningAuthorityId);
 		} catch (HL7Exception e) {
 			throw new TransformerException(this, e);
 		}
@@ -101,14 +100,6 @@ public class PIXQueryGenerator  extends AbstractMessageTransformer {
 		
 		Parser p = new GenericParser();
 		return p.encode(qbp_q21);
-	}
-
-	public String getAssigningAuthorityId() {
-		return assigningAuthorityId;
-	}
-
-	public void setAssigningAuthorityId(String assigningAuthorityId) {
-		this.assigningAuthorityId = assigningAuthorityId;
 	}
 
 	public String getRequestedAssigningAuthority() {

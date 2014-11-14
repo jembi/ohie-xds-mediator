@@ -20,7 +20,7 @@ public class CSDQueryGenerator extends AbstractMessageTransformer {
 		String localLocationIDAssigningAuthority = idMap.get("localLocationIDAssigningAuthority");
 		
 		String csdTemplate = "<csd:careServicesRequest xmlns='urn:ihe:iti:csd:2013' xmlns:csd='urn:ihe:iti:csd:2013'>"
-				+ "	<function uuid='4e8bbeb9-f5f5-11e2-b778-0800200c9a66'>"
+				+ "	<function urn='urn:ihe:iti:csd:2014:stored-function:provider-search'>"
 				+ "		<requestParams>"
 				//+ "			<id oid='" + localProviderID + "'/>"
 				+ "			<otherID code='" + localProviderID + "' assigningAuthorityName='" + localProviderIDAssigningAuthority + "'/>"
