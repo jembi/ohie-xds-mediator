@@ -46,3 +46,4 @@ local.properties
 flows/
 target/
 **/*.mflow
+.mule
