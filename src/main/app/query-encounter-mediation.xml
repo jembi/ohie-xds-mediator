@@ -12,10 +12,10 @@ http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/
     <flow name="query-encounter-mediationFlow1" doc:name="query-encounter-mediationFlow1">
         <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="xdsregistry" doc:name="HTTP"/>
         <cxf:proxy-service namespace="urn:ihe:iti:xds-b:2007" service="DocumentRegistry_Service" payload="body" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRegistry.wsdl" mtomEnabled="true" soapVersion="1.2" doc:name="CXF"/>
-        <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object"/>
+        <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryRequest"/>
         <custom-transformer class="org.openhim.mediator.xds.XDSQueryTransformer" doc:name="XDS Query Transformer"/>
         <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
-        <set-property propertyName="SOAPAction" value="urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b" doc:name="Add SOAP Action"/>
+        <set-property propertyName="SOAPAction" value="urn:ihe:iti:2007:RegistryStoredQuery" doc:name="Add SOAP Action"/>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true"/>
         <logger message="Sending request to XDS Registry" level="INFO" doc:name="Logger"/>

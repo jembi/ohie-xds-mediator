@@ -157,6 +157,9 @@
 			                    <wsdlOption>
 			                        <wsdl>${basedir}/src/main/resources/wsdl/XDS.b_DocumentRepository.wsdl</wsdl>
 			                    </wsdlOption>
+			                    <wsdlOption>
+			                        <wsdl>${basedir}/src/main/resources/wsdl/XDS.b_DocumentRegistry.wsdl</wsdl>
+			                    </wsdlOption>
 			                </wsdlOptions>
 			            </configuration>
 			            <goals>
