@@ -27,6 +27,7 @@ import org.mule.api.lifecycle.Callable;
 import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
+import org.openhim.mediator.pixpdq.PixProcessor;
 
 public class XDSValidator implements Callable {
 	
@@ -67,24 +68,8 @@ public class XDSValidator implements Callable {
 			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {
 		
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
-		String submissionPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
-		
-		submissionPatCX.replaceAll("&amp;", "&");
-		String patId = submissionPatCX.substring(0, submissionPatCX.indexOf('^'));
-		String assigningAuthority = submissionPatCX.substring(submissionPatCX.indexOf('&') + 1, submissionPatCX.lastIndexOf('&'));
-		
-		String submissionECID = null;
-		try {
-			submissionECID = sendPIXMessage(patId, assigningAuthority);
-			
-			if (submissionECID == null) {
-				throw new ValidationException("Query for client submission set ecid failed.");
-			}
-		} catch (MuleException e) {
-			log.error(e);
-			throw new ValidationException("Query for client submission set ecid failed.", e);
-		}
-		
+		String CX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
+		String submissionECID = new PixProcessor(client).resolveECID(CX);
 		String newSubmissionPatCx = submissionECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
 		InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, newSubmissionPatCx, regPac);
 		
