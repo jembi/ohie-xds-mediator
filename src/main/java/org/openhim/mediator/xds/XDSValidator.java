@@ -67,9 +67,10 @@ public class XDSValidator implements Callable {
 	protected void validateAndEnrichClient(
 			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {
 		
+	    PixProcessor pixProcessor = new PixProcessor(client);
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
 		String CX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
-		String submissionECID = new PixProcessor(client).resolveECID(CX);
+		String submissionECID = pixProcessor.resolveECID(CX);
 		String newSubmissionPatCx = submissionECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
 		InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, newSubmissionPatCx, regPac);
 		
@@ -77,20 +78,10 @@ public class XDSValidator implements Callable {
 		for (ExtrinsicObjectType eo : eos) {
 			String documentPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, eo);
 			
-			documentPatCX.replaceAll("&amp;", "&");
-			String docPatId = documentPatCX.substring(0, documentPatCX.indexOf('^'));
-			String docAssigningAuthority = documentPatCX.substring(documentPatCX.indexOf('&') + 1, documentPatCX.lastIndexOf('&'));
-			
-			String docECID = null;
-			try {
-				docECID = sendPIXMessage(docPatId, docAssigningAuthority);
+			String docECID = pixProcessor.resolveECID(documentPatCX);
 				
-				if (docECID == null) {
-					throw new ValidationException("Query for client document entry ecid failed.");
-				}
-			} catch (MuleException e) {
-				log.error(e);
-				throw new ValidationException("Query for client document entry ecid failed.", e);
+			if (docECID == null) {
+				throw new ValidationException("Query for client document entry ecid failed.");
 			}
 			
 			String newDocPatCx = docECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
@@ -100,25 +91,6 @@ public class XDSValidator implements Callable {
 		}
 	}
 
-	private String sendPIXMessage(String patId, String assigningAuthority) throws MuleException {
-		Map<String, String> idMap = new HashMap<>();
-		idMap.put("id", patId);
-		idMap.put("idType", assigningAuthority);
-
-		MuleMessage response = client.send("vm://getecid-pix", idMap, null, 5000);
-		
-		String success = response.getInboundProperty("success");
-		if (success != null && success.equals("true")) {
-			try {
-				return response.getPayloadAsString();
-			} catch (Exception ex) {
-				log.error(ex);
-				return null;
-			}
-		}
-		
-		return null;
-	}
 	
 	protected void validateProviderAndFacility(
 			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {

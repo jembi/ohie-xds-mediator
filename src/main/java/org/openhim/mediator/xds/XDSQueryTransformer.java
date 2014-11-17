@@ -6,7 +6,6 @@ import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 
 import org.apache.log4j.Logger;
-import org.mule.api.MuleContext;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
@@ -26,24 +25,23 @@ public class XDSQueryTransformer extends AbstractMessageTransformer {
         try {
             client = new MuleClient(muleContext);
             AdhocQueryRequest aqRequest = (AdhocQueryRequest) message.getPayload();
-
-            for (SlotType1 slot : aqRequest.getAdhocQuery().getSlot()) {
-                if ("$XDSDocumentEntryPatientId".equals(slot.getName())) {
-                    ValueListType vlt = slot.getValueList();
-                    if (vlt.getValue().size()!=0) {
-                        String pid = vlt.getValue().get(0);
-                        String ecid = new PixProcessor(client).resolveECID(pid);
-                        //TODO enrich
-                    }
+            enrichAdhocQueryRequest(aqRequest);
+            return aqRequest;
+        } catch (MuleException|ValidationException ex) {
+            throw new TransformerException(this, ex);
+        }
+    }
+    
+    protected void enrichAdhocQueryRequest(AdhocQueryRequest aqRequest) throws ValidationException {
+        for (SlotType1 slot : aqRequest.getAdhocQuery().getSlot()) {
+            if ("$XDSDocumentEntryPatientId".equals(slot.getName())) {
+                ValueListType vlt = slot.getValueList();
+                if (vlt.getValue().size()!=0) {
+                    String pid = vlt.getValue().get(0);
+                    String ecid = new PixProcessor(client).resolveECID(pid);
+                    break;
                 }
             }
-        } catch (MuleException ex) {
-            throw new TransformerException(this, ex);
-        } catch (ValidationException ex) {
-            //TODO validation failure handling
-            log.warn("Validation failure", ex);
         }
-
-        return message;
     }
 }
