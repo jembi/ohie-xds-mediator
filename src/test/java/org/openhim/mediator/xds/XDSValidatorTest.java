@@ -31,23 +31,14 @@ import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
+import org.openhim.mediator.test.Util;
 
 public class XDSValidatorTest {
-	
-    private <T> T parseRequestFromResourceName(String resourceName) throws JAXBException, FileNotFoundException {
-        JAXBContext jaxbContext = JAXBContext.newInstance("ihe.iti.xds_b._2007:oasis.names.tc.ebxml_regrep.xsd.lcm._3:oasis.names.tc.ebxml_regrep.xsd.query._3:oasis.names.tc.ebxml_regrep.xsd.rim._3:oasis.names.tc.ebxml_regrep.xsd.rs._3:org.hl7.v3");
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream(resourceName);
-        JAXBElement<T> request = (JAXBElement<T>) unmarshaller.unmarshal(is);
-
-        return request.getValue();
-    }
 
 	@Test
 	public void validateAndEnrichClient_shouldSendExpectedPIXRequests() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
@@ -68,7 +59,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForSubmissionSet() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
@@ -83,7 +74,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForDocumentEntries() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1111111111");
 		
 		// when
@@ -98,7 +89,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldReturnOnSuccessfulValidation() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-epid-elid");
 		
 		// when
@@ -110,7 +101,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldOnlyCallGetElidWhenNoEpidIsSupplied() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-epid.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr-no-epid.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-elid");
 		
 		// when
@@ -122,7 +113,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldOnlyCallGetEpidWhenNoElidIsSupplied() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-elid.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr-no-elid.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-epid");
 		
 		// when
@@ -134,7 +125,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldThrowValidationExceptionIfCSDQueryNotSuccessful() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(false, null, "vm://get-epid-elid");
 		
 		// when
@@ -153,7 +144,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldEnrichPNRWithEPID() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		Map<String, String> map = new HashMap<>();
 		map.put("epid", "123456789");
 		map.put("epidAssigningAuthorityId", "1.2.3");
@@ -192,7 +183,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldEnrichPNRWithELID() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		Map<String, String> map = new HashMap<>();
 		map.put("elid", "53");
 		map.put("elidAssigningAuthorityId", "1.2.3");
