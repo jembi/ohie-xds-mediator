@@ -4,8 +4,6 @@ package org.openhim.mediator.xds;
 import javax.xml.bind.JAXBException;
 
 import oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryRequest;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.SlotType1;
-import oasis.names.tc.ebxml_regrep.xsd.rim._3.ValueListType;
 
 import org.apache.log4j.Logger;
 import org.dcm4chee.xds2.infoset.util.InfosetUtil;
@@ -38,19 +36,14 @@ public class XDSQueryTransformer extends AbstractMessageTransformer {
     protected void enrichAdhocQueryRequest(AdhocQueryRequest aqRequest) throws ValidationException, JAXBException {
         String resolvedECID = null;
 
-        for (SlotType1 slot : aqRequest.getAdhocQuery().getSlot()) {
-            if ("$XDSDocumentEntryPatientId".equals(slot.getName())) {
-                ValueListType vlt = slot.getValueList();
-                if (vlt.getValue().size()!=0) {
-                    String pid = vlt.getValue().get(0);
-                    resolvedECID = new PixProcessor(client).resolveECID(pid);
-                    break;
-                }
-            }
-        }
-        
-        if (resolvedECID==null) {
+        String pid = InfosetUtil.getSlotValue(aqRequest.getAdhocQuery().getSlot(), "$XDSDocumentEntryPatientId", null);
+        if (pid==null) {
             throw new ValidationException("No patient identifiers found in XDS.b adhoc query request");
+        }
+
+        resolvedECID = new PixProcessor(client).resolveECID(pid);
+        if (resolvedECID==null) {
+            throw new ValidationException("Failed to resolve patient ECID");
         }
 
         String ecidCX = resolvedECID + "^^^&amp;ECID&amp;ISO";
