@@ -30,8 +30,9 @@ public class XDSQueryTransformerTest {
         AdhocQueryRequest aqRequest = Util.parseRequestFromClass(AdhocQueryRequest.class, "adhocQuery.xml");
         XDSQueryTransformer transformer = new XDSQueryTransformer();
         transformer.setClient(mockClient);
-        transformer.enrichAdhocQueryRequest(aqRequest);
+        String originalPID = transformer.enrichAdhocQueryRequest(aqRequest);
 
+        assertEquals("1234567890^^^&1.2.3&ISO", originalPID);
         assertEquals("testECID^^^&amp;ECID&amp;ISO", InfosetUtil.getSlotValue(aqRequest.getAdhocQuery().getSlot(), "$XDSDocumentEntryPatientId", null));
     }
 
