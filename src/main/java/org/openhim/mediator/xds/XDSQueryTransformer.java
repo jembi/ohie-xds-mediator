@@ -26,6 +26,7 @@ public class XDSQueryTransformer extends AbstractMessageTransformer {
     Logger log = Logger.getLogger(this.getClass());
 	
     private MuleClient client;
+    private String enterpriseAssigningAuthority;
 	
 
     @Override
@@ -48,14 +49,16 @@ public class XDSQueryTransformer extends AbstractMessageTransformer {
         if (pid==null) {
             throw new ValidationException("No patient identifiers found in XDS.b adhoc query request");
         }
+        
+        pid = pid.replaceAll("'", "").replaceAll("\\(", "").replaceAll("\\)", "");
 
         resolvedECID = new PixProcessor(client).resolveECID(pid);
-        if (resolvedECID==null) {
-            throw new ValidationException("Failed to resolve patient ECID");
+        if (resolvedECID==null || resolvedECID.contains("NullPayload")) {
+            throw new ValidationException("Failed to resolve patient enterprise identifier");
         }
 
-        String ecidCX = resolvedECID + "^^^&amp;ECID&amp;ISO";
-        InfosetUtil.addOrOverwriteSlot(aqRequest.getAdhocQuery(), "$XDSDocumentEntryPatientId", ecidCX);
+        String ecidCX = resolvedECID + "^^^&" + enterpriseAssigningAuthority + "&ISO";
+        InfosetUtil.addOrOverwriteSlot(aqRequest.getAdhocQuery(), "$XDSDocumentEntryPatientId", "'" + ecidCX + "'");
 
         return pid;
     }
@@ -66,5 +69,14 @@ public class XDSQueryTransformer extends AbstractMessageTransformer {
 
     public void setClient(MuleClient client) {
         this.client = client;
+    }
+
+    public String getEnterpriseAssigningAuthority() {
+        return enterpriseAssigningAuthority;
+    }
+
+    public void setEnterpriseAssigningAuthority(
+            String enterpriseAssigningAuthority) {
+        this.enterpriseAssigningAuthority = enterpriseAssigningAuthority;
     }
 }
