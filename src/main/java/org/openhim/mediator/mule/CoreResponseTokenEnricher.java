@@ -28,6 +28,7 @@ public class CoreResponseTokenEnricher extends MediatorMuleTransformer {
             if (orchestrationName!=null && !orchestrationName.isEmpty()) {
                 Orchestration o = fetchOrchestration(orchestrationName);
                 if (enrichOrchestrationRequest) {
+                    o.getRequest().setMethod(getHTTPMethod(message));
                     o.getRequest().setBody(message.getPayloadAsString());
                 } else if (enrichOrchestrationResponse) {
                     o.getResponse().setStatus(getHTTPStatus(message));
