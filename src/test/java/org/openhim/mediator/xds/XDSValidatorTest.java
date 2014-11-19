@@ -1,6 +1,8 @@
 package org.openhim.mediator.xds;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
@@ -9,16 +11,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.ExtrinsicObjectType;
 import oasis.names.tc.ebxml_regrep.xsd.rim._3.RegistryPackageType;
@@ -31,23 +28,14 @@ import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
+import org.openhim.mediator.test.Util;
 
 public class XDSValidatorTest {
-	
-    private <T> T parseRequestFromResourceName(String resourceName) throws JAXBException, FileNotFoundException {
-        JAXBContext jaxbContext = JAXBContext.newInstance("ihe.iti.xds_b._2007:oasis.names.tc.ebxml_regrep.xsd.lcm._3:oasis.names.tc.ebxml_regrep.xsd.query._3:oasis.names.tc.ebxml_regrep.xsd.rim._3:oasis.names.tc.ebxml_regrep.xsd.rs._3:org.hl7.v3");
-        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-
-        InputStream is = this.getClass().getClassLoader().getResourceAsStream(resourceName);
-        JAXBElement<T> request = (JAXBElement<T>) unmarshaller.unmarshal(is);
-
-        return request.getValue();
-    }
 
 	@Test
 	public void validateAndEnrichClient_shouldSendExpectedPIXRequests() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
@@ -68,7 +56,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForSubmissionSet() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
@@ -83,7 +71,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateAndEnrichClient_shouldEnrichPNRWithECIDForDocumentEntries() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1111111111");
 		
 		// when
@@ -98,7 +86,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldReturnOnSuccessfulValidation() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
@@ -110,7 +98,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldOnlyCallGetElidWhenNoEpidIsSupplied() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-epid.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr-no-epid.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
@@ -122,7 +110,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldOnlyCallGetEpidWhenNoElidIsSupplied() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-elid.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr-no-elid.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
@@ -134,7 +122,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldThrowValidationExceptionIfCSDQueryNotSuccessful() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(false, null, new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
@@ -153,7 +141,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldEnrichPNRWithEPID() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		Map<String, String> map = new HashMap<>();
 		map.put("epid", "123456789");
 		map.put("epidAssigningAuthorityId", "1.2.3");
@@ -192,7 +180,7 @@ public class XDSValidatorTest {
 	@Test
 	public void validateProviderAndFacility_shouldEnrichPNRWithELID() throws Exception {
 		// given
-		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
+		ProvideAndRegisterDocumentSetRequestType pnr = Util.parseRequestFromResourceName("pnr1.xml");
 		Map<String, String> map = new HashMap<>();
 		map.put("elid", "53");
 		map.put("elidAssigningAuthorityId", "1.2.3");
