@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:https="http://www.mulesoft.org/schema/mule/https" xmlns:context="http://www.springframework.org/schema/context" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:quartz="http://www.mulesoft.org/schema/mule/quartz" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
+http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd">
+	<context:property-placeholder location="classpath:xds-mediator.properties, classpath:xds-mediator-override.properties"/>
+    <flow name="register_mediatorFlow1" doc:name="register_mediatorFlow1">
+        <quartz:inbound-endpoint jobName="Startup" repeatInterval="0" repeatCount="0" responseTimeout="10000" doc:name="Startup" startDelay="3000">
+            <quartz:event-generator-job groupName="Register Mediator" jobGroupName="Register Mediator"/>
+        </quartz:inbound-endpoint>
+        <logger level="INFO" doc:name="Logger" message="Running OpenHIM Core registration task"/>
+        <custom-transformer class="org.openhim.mediator.RegisterMediatorSetupTransformer" doc:name="Get registration configuration"/>
+        <custom-transformer class="org.openhim.mediator.auth.CoreUserAuthenticationTransformer" doc:name="Authenticate">
+            <spring:property name="coreHost" value="${him.core.host}"/>
+            <spring:property name="coreAPIPort" value="${him.core.api.port}"/>
+            <spring:property name="user" value="${him.core.user}"/>
+            <spring:property name="password" value="${him.core.password}"/>
+        </custom-transformer>
+        <https:outbound-endpoint exchange-pattern="request-response" host="${him.core.host}" port="${him.core.api.port}" path="mediators" method="POST" doc:name="Register with OpenHIM Core" contentType="application/json" mimeType="application/json"/>
+        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+    </flow>
+</mule>
