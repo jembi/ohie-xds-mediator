@@ -18,8 +18,16 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
     <flow name="getelid-denormalisation-csdFlow1" doc:name="getelid-denormalisation-csdFlow1">
         <vm:inbound-endpoint exchange-pattern="request-response" path="get-elid" doc:name="VM"/>
         <custom-transformer class="org.openhim.mediator.denormalisation.CSDFacilityQueryGenerator" doc:name="Java"/>
+        <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+            <spring:property name="orchestrationName" value="CSD - Resolve Facility"/>
+            <spring:property name="enrichOrchestrationRequest" value="true"/>
+        </custom-transformer>
         <response>
         	<logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+            <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+                <spring:property name="orchestrationName" value="CSD - Resolve Facility"/>
+                <spring:property name="enrichOrchestrationResponse" value="true"/>
+            </custom-transformer>
         	<mulexml:xml-to-dom-transformer doc:name="XML to DOM"/>
         	<set-variable doc:name="Extract entityID" value="#[xpath('string(//csd:CSD/csd:facilityDirectory/csd:facility/@entityID)')]" variableName="entityID"/>
         	<logger level="INFO" doc:name="Log response" message="Facility EntityID: #[flowVars.entityID]"/>
