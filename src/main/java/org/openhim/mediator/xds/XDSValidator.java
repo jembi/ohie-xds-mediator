@@ -2,6 +2,7 @@ package org.openhim.mediator.xds;
 
 import ihe.iti.xds_b._2007.ObjectFactory;
 import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
+import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType.Document;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,6 +59,13 @@ public class XDSValidator implements Callable {
 			
 		int size = pnr.getDocument().size();
 		log.info("Number of documents in this request: " + size);
+		List<Document> docs = pnr.getDocument();
+		int n = 1;
+		for (Document document : docs) {
+			// TODO: make this log.debug
+			log.info("Document " + n + " contents" + new String(document.getValue()));
+			n++;
+		}
 		
 		ObjectFactory of = new ObjectFactory();
 
