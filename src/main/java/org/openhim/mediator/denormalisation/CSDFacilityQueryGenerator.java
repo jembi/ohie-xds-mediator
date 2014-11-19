@@ -6,27 +6,22 @@ import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
 import org.mule.transformer.AbstractMessageTransformer;
 
-public class CSDQueryGenerator extends AbstractMessageTransformer {
+public class CSDFacilityQueryGenerator extends AbstractMessageTransformer {
 	
 	@Override
 	public Object transformMessage(MuleMessage message, String outputEncoding)
 			throws TransformerException {
 		
+		@SuppressWarnings("unchecked")
 		Map<String, String> idMap = (Map<String, String>) message.getPayload();
 		
-		String localProviderID = idMap.get("localProviderID");
 		String localLocationID = idMap.get("localLocationID");
-		String localProviderIDAssigningAuthority = idMap.get("localProviderIDAssigningAuthority");
 		String localLocationIDAssigningAuthority = idMap.get("localLocationIDAssigningAuthority");
 		
 		String csdTemplate = "<csd:careServicesRequest xmlns='urn:ihe:iti:csd:2013' xmlns:csd='urn:ihe:iti:csd:2013'>"
-				+ "	<function urn='urn:ihe:iti:csd:2014:stored-function:provider-search'>"
+				+ "	<function urn='urn:ihe:iti:csd:2014:stored-function:facility-search'>"
 				+ "		<requestParams>"
-				//+ "			<id oid='" + localProviderID + "'/>"
-				+ "			<otherID code='" + localProviderID + "' assigningAuthorityName='" + localProviderIDAssigningAuthority + "'/>"
-				+ "			<facilities>"
-				+ "				<facility oid='" + localLocationID + "'/>"
-				+ "			</facilities>"
+				+ "			<otherID code='" + localLocationID + "' assigningAuthorityName='" + localLocationIDAssigningAuthority + "'/>"
 				+ "		</requestParams>"
 				+ "	</function>"
 				+ "</csd:careServicesRequest>";

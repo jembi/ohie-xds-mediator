@@ -17,4 +17,16 @@ public class Constants {
 	public static final String XDS_ITI_43 = "XDS-ITI-43";
 	public static final String XDS_ITI_43_PATIENTID = "XDS-ITI-43_patientId";
 	
+	public static final String UUID_OID_AUTHORITY = "2.25";
+	
+	public static final String EPID_MAP_ID = "epid";
+	public static final String EPID_AUTHORITY_MAP_ID = "epidAssigningAuthorityId";
+	public static final String ELID_MAP_ID = "elid";
+	public static final String ELID_AUTHORITY_MAP_ID = "elidAssigningAuthorityId";
+	
+	public static final String LOCAL_PROVIDER_MAP_ID = "localProviderID";
+	public static final String LOCAL_PROVIDER_AUTHORITY_MAP_ID = "localProviderIDAssigningAuthority";
+	public static final String LOCAL_LOCATION_MAP_ID = "localLocationID";
+	public static final String LOCAL_LOCATION_AUTHORITY_MAP_ID = "localLocationIDAssigningAuthority";
+	
 }

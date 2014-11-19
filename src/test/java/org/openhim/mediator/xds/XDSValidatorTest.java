@@ -99,7 +99,7 @@ public class XDSValidatorTest {
 	public void validateProviderAndFacility_shouldReturnOnSuccessfulValidation() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-epid-elid");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
 		xdsValidator.validateProviderAndFacility(pnr);
@@ -111,7 +111,7 @@ public class XDSValidatorTest {
 	public void validateProviderAndFacility_shouldOnlyCallGetElidWhenNoEpidIsSupplied() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-epid.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-elid");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
 		xdsValidator.validateProviderAndFacility(pnr);
@@ -123,7 +123,7 @@ public class XDSValidatorTest {
 	public void validateProviderAndFacility_shouldOnlyCallGetEpidWhenNoElidIsSupplied() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr-no-elid.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), "vm://get-epid");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
 		xdsValidator.validateProviderAndFacility(pnr);
@@ -135,7 +135,7 @@ public class XDSValidatorTest {
 	public void validateProviderAndFacility_shouldThrowValidationExceptionIfCSDQueryNotSuccessful() throws Exception {
 		// given
 		ProvideAndRegisterDocumentSetRequestType pnr = parseRequestFromResourceName("pnr1.xml");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(false, null, "vm://get-epid-elid");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(false, null, new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
 		try {
@@ -157,7 +157,7 @@ public class XDSValidatorTest {
 		Map<String, String> map = new HashMap<>();
 		map.put("epid", "123456789");
 		map.put("epidAssigningAuthorityId", "1.2.3");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, map, "vm://get-epid-elid");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, map, new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
 		try {
@@ -196,7 +196,7 @@ public class XDSValidatorTest {
 		Map<String, String> map = new HashMap<>();
 		map.put("elid", "53");
 		map.put("elidAssigningAuthorityId", "1.2.3");
-		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, map, "vm://get-epid-elid");
+		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, map, new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
 		try {
@@ -257,14 +257,16 @@ public class XDSValidatorTest {
 		return xdsValidator;
 	}
 	
-	private XDSValidator configureXDSValidatorForCSD(Boolean success, Map<String, String> mapToReturn, String  vmQueue) throws Exception {
+	private XDSValidator configureXDSValidatorForCSD(Boolean success, Map<String, String> mapToReturn, String[]  vmQueues) throws Exception {
 		XDSValidator xdsValidator = new XDSValidator();
 		xdsValidator.setEcidAssigningAuthority("1.2.3");
 		MuleClient muleClient = mock(MuleClient.class);
 		MuleMessage mockMuleMessage = mock(MuleMessage.class);
 		when(mockMuleMessage.getPayload()).thenReturn(mapToReturn);
 		when(mockMuleMessage.getInboundProperty("success")).thenReturn(success.toString());
-		when(muleClient.send(eq(vmQueue), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
+		for (String queue : vmQueues) {
+			when(muleClient.send(eq(queue), anyObject(), anyMap(), eq(5000))).thenReturn(mockMuleMessage);
+		}
 		
 		xdsValidator.setClient(muleClient);
 		return xdsValidator;

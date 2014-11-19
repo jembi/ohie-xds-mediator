@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans
+  xmlns="http://www.springframework.org/schema/beans"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xmlns:cxf="http://cxf.apache.org/core"
+  xmlns:wsa="http://cxf.apache.org/ws/addressing"
+  xmlns:wsrm-mgr="http://cxf.apache.org/ws/rm/manager"
+  xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd 
+    http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd
+    http://schemas.xmlsoap.org/ws/2005/02/rm/policy http://schemas.xmlsoap.org/ws/2005/02/rm/wsrm-policy.xsd
+    http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+  
+  <cxf:bus>
+    <cxf:features>
+      <wsa:addressing/>
+    </cxf:features>
+  </cxf:bus>
+     
+</beans>

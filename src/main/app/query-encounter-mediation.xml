@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <mule xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="CE-3.5.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
@@ -10,7 +10,7 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
     <flow name="query-encounter-mediationFlow1" doc:name="query-encounter-mediationFlow1">
-        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" path="xdsregistry" doc:name="HTTP"/>
+        <http:inbound-endpoint exchange-pattern="request-response" host="0.0.0.0" port="8081" path="xdsregistry" doc:name="HTTP"/>
         <cxf:proxy-service namespace="urn:ihe:iti:xds-b:2007" service="DocumentRegistry_Service" payload="body" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRegistry.wsdl" mtomEnabled="true" soapVersion="1.2" doc:name="CXF"/>
         <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryRequest"/>
         <custom-transformer class="org.openhim.mediator.xds.XDSQueryTransformer" doc:name="XDS Query Transformer"/>

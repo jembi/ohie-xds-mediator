@@ -24,15 +24,15 @@ import org.mule.api.MuleEventContext;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
 import org.mule.api.lifecycle.Callable;
-import org.mule.api.transformer.TransformerException;
 import org.mule.module.client.MuleClient;
+import org.openhim.mediator.Constants;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 
 public class XDSValidator implements Callable {
 	
 	Logger log = Logger.getLogger(this.getClass());
 	
-	private String ecidAssigningAuthority;
+	private String ecidAssigningAuthority = "";
 	private MuleClient client;
 	
 	@Override
@@ -194,13 +194,14 @@ public class XDSValidator implements Callable {
 				// if we have both IDs
 				if (localProviderID != null && localLocationID != null) {
 					try {
-						Map<String, String> enterpriseIDs = getEpidElid(localProviderID, localProviderIDAssigningAuthority, localLocationID, localLocationIDAssigningAuthority);
+						Map<String, String> epidMap = getEpid(localProviderID, localProviderIDAssigningAuthority);
+						Map<String, String> elidMap = getElid(localLocationID, localLocationIDAssigningAuthority);
 						
-						if (enterpriseIDs == null) {
-							throw new ValidationException("Query for provider and facility failed.");
+						if (epidMap == null || elidMap == null) {
+							throw new ValidationException("Query for provider or facility failed.");
 						} else {
-							setValListToEPID(personSlotValList, enterpriseIDs);
-							setValListToELID(localLocationName, institutionSlotValList, enterpriseIDs);
+							setValListToEPID(personSlotValList, epidMap);
+							setValListToELID(localLocationName, institutionSlotValList, elidMap);
 						}
 					} catch (MuleException e) {
 						log.error(e);
@@ -208,7 +209,7 @@ public class XDSValidator implements Callable {
 					}
 				} else if (localProviderID != null) { // if we just have a local provider ID
 					try {
-						Map<String, String> enterpriseIDs = getEpid(localProviderID);
+						Map<String, String> enterpriseIDs = getEpid(localProviderID, localProviderIDAssigningAuthority);
 						
 						if (enterpriseIDs == null) {
 							throw new ValidationException("Query for provider failed.");
@@ -221,7 +222,7 @@ public class XDSValidator implements Callable {
 					}
 				} else if (localLocationID != null) { // if we just have a local location ID
 					try {
-						Map<String, String> enterpriseIDs = getElid(localLocationID);
+						Map<String, String> enterpriseIDs = getElid(localLocationID, localLocationIDAssigningAuthority);
 						
 						if (enterpriseIDs == null) {
 							throw new ValidationException("Query for location failed.");
@@ -241,14 +242,14 @@ public class XDSValidator implements Callable {
 
 	private void setValListToELID(String localLocationName, List<String> institutionSlotValList,
 			Map<String, String> enterpriseIDs) {
-		String newInstitutionXON = createXON(localLocationName, enterpriseIDs.get("elid"), enterpriseIDs.get("elidAssigningAuthorityId"));
+		String newInstitutionXON = createXON(localLocationName, enterpriseIDs.get(Constants.ELID_MAP_ID), enterpriseIDs.get(Constants.ELID_AUTHORITY_MAP_ID));
 		institutionSlotValList.clear();
 		institutionSlotValList.add(newInstitutionXON);
 	}
 
 	private void setValListToEPID(List<String> personSlotValList,
 			Map<String, String> enterpriseIDs) {
-		String newPersonXCN = createXCN(enterpriseIDs.get("epid"), enterpriseIDs.get("epidAssigningAuthorityId"));
+		String newPersonXCN = createXCN(enterpriseIDs.get(Constants.EPID_MAP_ID), enterpriseIDs.get(Constants.EPID_AUTHORITY_MAP_ID));
 		personSlotValList.clear();
 		personSlotValList.add(newPersonXCN);
 	}
@@ -262,9 +263,10 @@ public class XDSValidator implements Callable {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, String> getElid(String localLocationID) throws MuleException {
+	private Map<String, String> getElid(String localLocationID, String localLocationIDAssigningAuthority) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
-		idMap.put("localFacilityId", localLocationID);
+		idMap.put(Constants.LOCAL_LOCATION_MAP_ID, localLocationID);
+		idMap.put(Constants.LOCAL_LOCATION_AUTHORITY_MAP_ID, localLocationIDAssigningAuthority);
 		
 		MuleMessage response = client.send("vm://get-elid", idMap, null, 5000);
 		
@@ -277,9 +279,10 @@ public class XDSValidator implements Callable {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, String> getEpid(String localProviderID) throws MuleException {
+	private Map<String, String> getEpid(String localProviderID, String localProviderIDAssigningAuthority) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
-		idMap.put("localProviderID", localProviderID);
+		idMap.put(Constants.LOCAL_PROVIDER_MAP_ID, localProviderID);
+		idMap.put(Constants.LOCAL_PROVIDER_AUTHORITY_MAP_ID, localProviderIDAssigningAuthority);
 		
 		MuleMessage response = client.send("vm://get-epid", idMap, null, 5000);
 		
@@ -291,25 +294,6 @@ public class XDSValidator implements Callable {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
-	private Map<String, String> getEpidElid(String localProviderID, String localProviderIDAssigningAuthority, String localLocationID, String localLocationIDAssigningAuthority)
-			throws MuleException {
-		Map<String, String> idMap = new HashMap<>();
-		idMap.put("localProviderID", localProviderID);
-		idMap.put("localLocationID", localLocationID);
-		idMap.put("localProviderIDAssigningAuthority", localProviderIDAssigningAuthority);
-		idMap.put("localLocationIDAssigningAuthority", localLocationIDAssigningAuthority);
-		
-		MuleMessage response = client.send("vm://get-epid-elid", idMap, null, 5000);
-		
-		String success = response.getInboundProperty("success");
-		if (success != null && success.equals("true")) {
-			return (Map<String, String>) response.getPayload();
-		} else {
-			return null;
-		}
-	}
-	
 	protected void validateTerminology(
 			ProvideAndRegisterDocumentSetRequestType pnr) {
 		// TODO Auto-generated method stub

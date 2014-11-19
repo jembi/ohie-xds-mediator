@@ -2,7 +2,7 @@
 
 <mule xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="CE-3.5.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
@@ -16,12 +16,16 @@ http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/
 		<service-overrides sessionHandler="org.mule.session.NullSessionHandler"/>
 	</http:connector>
     <mulexml:jaxb-context name="JAXB_Context" packageNames="ihe.iti.xds_b._2007:oasis.names.tc.ebxml_regrep.xsd.lcm._3:oasis.names.tc.ebxml_regrep.xsd.query._3:oasis.names.tc.ebxml_regrep.xsd.rim._3:oasis.names.tc.ebxml_regrep.xsd.rs._3:org.hl7.v3" doc:name="JAXB Context"/>
+    <cxf:configuration configurationLocation="cxfConfig.xml" doc:name="CXF Configuration"/>
     <flow name="save-encounter-mediationFlow1" doc:name="save-encounter-mediationFlow1">
-	    
-        <http:inbound-endpoint exchange-pattern="request-response" host="localhost" port="8081" doc:name="HTTP" responseTimeout="30000" path="xdsrepository"/>
+        <http:inbound-endpoint exchange-pattern="request-response" host="0.0.0.0" port="8081" doc:name="HTTP" responseTimeout="30000" path="xdsrepository"/>
         <cxf:proxy-service doc:name="CXF" payload="body" soapVersion="1.2" namespace="urn:ihe:iti:xds-b:2007" service="DocumentRepository_Service" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRepository.wsdl" mtomEnabled="true"/>
         <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType"/>
-        <component class="org.openhim.mediator.xds.XDSValidator" doc:name="Java"/>
+        <component doc:name="Java">
+        	<singleton-object class="org.openhim.mediator.xds.XDSValidator">
+		        <property key="ecidAssigningAuthority" value="${pix.requestedAssigningAuthorityId}"/>
+		    </singleton-object>
+        </component>
         <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
         <set-property propertyName="SOAPAction" value = "urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b" doc:name="Add SOAP Action"/>
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
