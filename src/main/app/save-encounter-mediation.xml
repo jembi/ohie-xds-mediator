@@ -32,6 +32,8 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                     </singleton-object>
                 </component>
                 <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
+                <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+                <set-property propertyName="SOAPAction" value="urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b" doc:name="Add SOAP Action"/>
             </when>
             <when expression="#[flowVars.cxf_operation.getLocalPart() == 'DocumentRepository_RetrieveDocumentSet']">
                 <logger message="Detected retrieve docuemnt set via cxf operation." level="INFO" doc:name="Logger"/>
@@ -44,7 +46,6 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                 </scripting:component>
             </otherwise>
         </choice>
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true"/>
         <logger message="Sending HTTP request to XDS repository" level="INFO" doc:name="Logger"/>
         <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="${xds.repository.host}" method="POST" path="${xds.repository.path}" port="${xds.repository.port}"/>
