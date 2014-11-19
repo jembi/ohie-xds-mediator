@@ -18,7 +18,7 @@ public class CoreResponseToken implements Serializable {
         private String queryString;
         private String body;
         private String method;
-        private Date timestamp;
+        private Date timestamp = new Date();
 
         public String getPath() {
             return path;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:context="http://www.springframework.org/schema/context"
+<mule xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:json="http://www.mulesoft.org/schema/mule/json" xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -10,10 +10,20 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
 http://www.mulesoft.org/schema/mule/jersey http://www.mulesoft.org/schema/mule/jersey/current/mule-jersey.xsd
-http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd">
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
 	<context:property-placeholder location="classpath:xds-mediator.properties, classpath:xds-mediator-override.properties"/>
     <flow name="query-encounter-mediationFlow1" doc:name="query-encounter-mediationFlow1">
         <http:inbound-endpoint exchange-pattern="request-response" host="0.0.0.0" port="8081" path="xdsregistry" doc:name="HTTP"/>
+        <response>
+            <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+                <spring:property name="enrichResponse" value="true"/>
+                <spring:property name="returnTokenAsPayload" value="true"/>
+            </custom-transformer>
+            <json:object-to-json-transformer doc:name="Object to JSON"/>
+            <set-property propertyName="Content-Type" value="application/json+openhim" doc:name="Set Content-Type"/>
+        </response>
         <cxf:proxy-service namespace="urn:ihe:iti:xds-b:2007" service="DocumentRegistry_Service" payload="body" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRegistry.wsdl" soapVersion="1.2" doc:name="CXF"/>
         <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryRequest"/>
         <custom-transformer class="org.openhim.mediator.xds.XDSQueryTransformer" doc:name="Enrich ECID">
@@ -24,16 +34,24 @@ http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/
         <byte-array-to-string-transformer doc:name="Byte Array to String"/>
         <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
         <response>
-        <logger message="Received response" level="INFO" doc:name="Logger"/>
-        <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
-        <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryResponse"/>
-        <custom-transformer class="org.openhim.mediator.xds.XDSQueryResponseTransformer" doc:name="Remove ECID and insert request PID"/>
-        <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
-        <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+            <logger message="Received response" level="INFO" doc:name="Logger"/>
+            <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+            <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryResponse"/>
+            <custom-transformer class="org.openhim.mediator.xds.XDSQueryResponseTransformer" doc:name="Remove ECID and insert request PID"/>
+            <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
+            <byte-array-to-string-transformer doc:name="Byte Array to String"/>
+            <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+                <spring:property name="orchestrationName" value="XDS.b Registry"/>
+                <spring:property name="enrichOrchestrationResponse" value="true"/>
+            </custom-transformer>
         </response>
         <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" />
         <logger message="Sending request to XDS Registry" level="INFO" doc:name="Logger"/>
         <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
+        <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+            <spring:property name="orchestrationName" value="XDS.b Registry"/>
+            <spring:property name="enrichOrchestrationRequest" value="true"/>
+        </custom-transformer>
         <http:outbound-endpoint exchange-pattern="request-response" host="${xds.registry.host}" port="${xds.registry.port}" path="${xds.registry.path}" method="POST" doc:name="HTTP"/>
     </flow>
 </mule>
