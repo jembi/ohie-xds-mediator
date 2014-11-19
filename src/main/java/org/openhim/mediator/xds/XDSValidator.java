@@ -71,7 +71,7 @@ public class XDSValidator implements Callable {
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
 		String CX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
 		String submissionECID = pixProcessor.resolveECID(CX);
-		String newSubmissionPatCx = submissionECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
+		String newSubmissionPatCx = submissionECID + "^^^&" + ecidAssigningAuthority + "&ISO";
 		InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, newSubmissionPatCx, regPac);
 		
 		List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
@@ -84,7 +84,7 @@ public class XDSValidator implements Callable {
 				throw new ValidationException("Query for client document entry ecid failed.");
 			}
 			
-			String newDocPatCx = docECID + "^^^&amp;" + ecidAssigningAuthority + "&amp;ISO";
+			String newDocPatCx = docECID + "^^^&" + ecidAssigningAuthority + "&ISO";
 			InfosetUtil.setExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, newDocPatCx, eo);
 			
 			// TODO: Add to CDA identifier list
@@ -212,11 +212,11 @@ public class XDSValidator implements Callable {
 	}
 
 	protected String createXON(String organisationName, String identifier, String assigingAuthority) {
-		return organisationName + "^^^^^&amp;" + assigingAuthority + "&amp;ISO" + "^^^^" + identifier;
+		return organisationName + "^^^^^&" + assigingAuthority + "&ISO" + "^^^^" + identifier;
 	}
 
 	protected String createXCN(String identifier, String assigingAuthority) {
-		return identifier + "^^^^^^^^&amp;" + assigingAuthority + "&amp;ISO";
+		return identifier + "^^^^^^^^&" + assigingAuthority + "&ISO";
 	}
 
 	@SuppressWarnings("unchecked")
