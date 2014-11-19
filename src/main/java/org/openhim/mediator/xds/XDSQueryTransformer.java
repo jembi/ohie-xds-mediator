@@ -12,14 +12,14 @@ import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
 import org.mule.api.transport.PropertyScope;
 import org.mule.module.client.MuleClient;
-import org.mule.transformer.AbstractMessageTransformer;
+import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 import org.openhim.mediator.pixpdq.PixProcessor;
 
 /**
  * Mule transformer that enriches an XDS.b Adhoc Query Request with the patient ECID using a PIX lookup
  */
-public class XDSQueryTransformer extends AbstractMessageTransformer {
+public class XDSQueryTransformer extends MediatorMuleTransformer {
     
     public static final String SESSION_PROP_REQUEST_PID = "original-request-pid";
 	
