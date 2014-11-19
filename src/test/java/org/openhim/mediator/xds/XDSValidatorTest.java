@@ -65,7 +65,7 @@ public class XDSValidatorTest {
 		// then
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
 		String submissionPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
-		assertEquals("1234567890^^^&amp;1.2.3&amp;ISO", submissionPatCX);
+		assertEquals("1234567890^^^&1.2.3&ISO", submissionPatCX);
 	}
 	
 	@Test
@@ -80,7 +80,7 @@ public class XDSValidatorTest {
 		// then
 		ExtrinsicObjectType eo = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest()).get(0);
 		String documentPatCX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSDocumentEntry_patientId, eo);
-		assertEquals("1111111111^^^&amp;1.2.3&amp;ISO", documentPatCX);
+		assertEquals("1111111111^^^&1.2.3&ISO", documentPatCX);
 	}
 	
 	@Test
@@ -167,7 +167,7 @@ public class XDSValidatorTest {
 						List<String> valueList = personSlot.getValueList().getValue();
 						
 						for (String val : valueList) {
-							assertEquals("123456789^^^^^^^^&amp;1.2.3&amp;ISO", val);
+							assertEquals("123456789^^^^^^^^&1.2.3&ISO", val);
 						}
 					}
 				}
@@ -206,7 +206,7 @@ public class XDSValidatorTest {
 						List<String> valueList = institutionSlot.getValueList().getValue();
 						
 						for (String val : valueList) {
-							assertTrue(val.contains("^^^^^&amp;1.2.3&amp;ISO^^^^53"));
+							assertTrue(val.contains("^^^^^&1.2.3&ISO^^^^53"));
 						}
 					}
 				}
@@ -219,7 +219,7 @@ public class XDSValidatorTest {
 	@Test
 	public void createXON_shouldCreateAValidXON() throws MuleException {
 		XDSValidator xdsValidator = new XDSValidator();
-		String xon = "Some Hospital^^^^^&amp;1.2.3.4.5.6.7.8.9.1789&amp;ISO^^^^45";
+		String xon = "Some Hospital^^^^^&1.2.3.4.5.6.7.8.9.1789&ISO^^^^45";
 		String xonResult = xdsValidator.createXON("Some Hospital", "45", "1.2.3.4.5.6.7.8.9.1789");
 		assertEquals(xon, xonResult);
 	}
@@ -227,7 +227,7 @@ public class XDSValidatorTest {
 	@Test
 	public void createXCN_shouldCreateAValidXCN() throws MuleException {
 		XDSValidator xdsValidator = new XDSValidator();
-		String xcn = "11375^^^^^^^^&amp;1.2.840.113619.6.197&amp;ISO";
+		String xcn = "11375^^^^^^^^&1.2.840.113619.6.197&ISO";
 		String xcnResult = xdsValidator.createXCN("11375", "1.2.840.113619.6.197");
 		assertEquals(xcn, xcnResult);
 	}
