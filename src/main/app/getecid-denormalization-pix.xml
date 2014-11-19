@@ -28,8 +28,16 @@ http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/cor
             <spring:property name="receivingFacility" value="${pix.receivingFacility}"/>
         </custom-transformer>
         <logger message="Generated PIX messgage: #[groovy: return message.payload;]" level="INFO" doc:name="Logger"/>
+        <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+            <spring:property name="orchestrationName" value="PIX"/>
+            <spring:property name="enrichOrchestrationRequest" value="true"/>
+        </custom-transformer>
         <response>
             <logger message="PIX Response: #[groovy: return message.getPayloadAsString();]" level="INFO" doc:name="Logger"/>
+            <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+                <spring:property name="orchestrationName" value="PIX"/>
+                <spring:property name="enrichOrchestrationResponse" value="true"/>
+            </custom-transformer>
             <custom-transformer class="org.openhim.mediator.denormalisation.PIXQueryResponseTransformer" doc:name="Handle RSP response">
                 <spring:property name="requestedAssigningAuthority" value="${pix.requestedAssigningAuthorityId}"/>
                 <spring:property name="pixManagerHost" value="${pix.manager.host}"/>

@@ -79,7 +79,7 @@ public class CoreResponseToken implements Serializable {
         private String status;
         private Map<String, String> headers = new HashMap<String, String>();
         private String body;
-        private Date timestamp;
+        private Date timestamp = new Date();
 
         public String getStatus() {
             return status;
