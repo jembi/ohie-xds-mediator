@@ -34,7 +34,10 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
         try {
             client = new MuleClient(muleContext);
             AdhocQueryRequest aqRequest = (AdhocQueryRequest) message.getPayload();
-            String originalPID = enrichAdhocQueryRequest(aqRequest);
+            
+            //getCoreResponseToken will ensure that a correlation id is initialized
+            getCoreResponseToken(message);
+            String originalPID = enrichAdhocQueryRequest(aqRequest, message.getCorrelationId());
             message.setProperty(SESSION_PROP_REQUEST_PID, originalPID, PropertyScope.SESSION);
             return aqRequest;
         } catch (MuleException | ValidationException | JAXBException ex) {
@@ -42,7 +45,7 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
         }
     }
     
-    protected String enrichAdhocQueryRequest(AdhocQueryRequest aqRequest) throws ValidationException, JAXBException {
+    protected String enrichAdhocQueryRequest(AdhocQueryRequest aqRequest, String messsageCorrelationId) throws ValidationException, JAXBException {
         String resolvedECID = null;
 
         String pid = InfosetUtil.getSlotValue(aqRequest.getAdhocQuery().getSlot(), "$XDSDocumentEntryPatientId", null);
@@ -52,7 +55,7 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
         
         pid = pid.replaceAll("'", "").replaceAll("\\(", "").replaceAll("\\)", "");
 
-        resolvedECID = new PixProcessor(client).resolveECID(pid);
+        resolvedECID = new PixProcessor(client, messsageCorrelationId).resolveECID(pid);
         if (resolvedECID==null || resolvedECID.contains("NullPayload")) {
             throw new ValidationException("Failed to resolve patient enterprise identifier");
         }

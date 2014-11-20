@@ -1,40 +1,66 @@
 package org.openhim.mediator.mule;
 
-import org.mule.RequestContext;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.mule.api.MuleEventContext;
 import org.mule.api.MuleMessage;
+import org.mule.api.lifecycle.Callable;
+import org.mule.api.transformer.TransformerException;
 import org.mule.api.transport.PropertyScope;
 import org.mule.transformer.AbstractMessageTransformer;
 import org.openhim.mediator.mule.CoreResponseToken.Orchestration;
 import org.openhim.mediator.mule.CoreResponseToken.Request;
 import org.openhim.mediator.mule.CoreResponseToken.Response;
 
-@SuppressWarnings("deprecation")
-public abstract class MediatorMuleTransformer extends AbstractMessageTransformer {
-    private static final String CORE_RESPONSE_TOKEN_PROP = "core-response-token";
+public abstract class MediatorMuleTransformer extends AbstractMessageTransformer implements Callable {
+    private static final Map<String, CoreResponseToken> tokenStore = new ConcurrentHashMap<>();
 
-    protected CoreResponseToken getCoreResponseToken() {
-        MuleMessage msg = RequestContext.getEvent().getMessage();
-        if (msg.getProperty(CORE_RESPONSE_TOKEN_PROP, PropertyScope.SESSION) == null) {
-            msg.setProperty(CORE_RESPONSE_TOKEN_PROP, new CoreResponseToken(), PropertyScope.SESSION);
-        }
-        return msg.getProperty(CORE_RESPONSE_TOKEN_PROP, PropertyScope.SESSION);
+	@Override
+	public Object onCall(MuleEventContext eventContext) throws Exception {
+		MuleMessage msg = eventContext.getMessage();
+		return msg;
+	}
+
+    @Override
+    public Object transformMessage(MuleMessage message, String outputEncoding) throws TransformerException {
+        return message;
     }
 
-    protected void setResponseBody(String payload) {
-        Response response = getCoreResponseToken().getResponse();
+    protected CoreResponseToken getCoreResponseToken(MuleMessage msg) {
+        if (msg.getCorrelationId()==null) {
+            msg.setCorrelationId(UUID.randomUUID().toString());
+        }
+
+        if (!tokenStore.containsKey(msg.getCorrelationId())) {
+            tokenStore.put(msg.getCorrelationId(), new CoreResponseToken());
+        }
+        return tokenStore.get(msg.getCorrelationId());
+    }
+    
+    //Clear out the token from the memory store
+    protected void clearToken(MuleMessage message) {
+        try {
+            tokenStore.remove(message.getCorrelationId());
+        } catch (Exception ex) { /* Quiet you! */ }
+    }
+
+    protected void setResponseBody(MuleMessage msg, String payload) {
+        Response response = getCoreResponseToken(msg).getResponse();
         if (response==null) {
             response = new Response();
         }
         response.setBody(payload);
-        getCoreResponseToken().setResponse(response);
+        getCoreResponseToken(msg).setResponse(response);
     }
     
     /**
      * Fetch an orchestration from the response token with a particular name.
      * If it is not found, a new orchestration will be created with that name.
      */
-    protected Orchestration fetchOrchestration(String orchestrationName) {
-        for (Orchestration o : getCoreResponseToken().getOrchestrations()) {
+    protected Orchestration fetchOrchestration(MuleMessage msg, String orchestrationName) {
+        for (Orchestration o : getCoreResponseToken(msg).getOrchestrations()) {
             if (o.getName().equals(orchestrationName)) {
                 return o;
             }
@@ -44,7 +70,7 @@ public abstract class MediatorMuleTransformer extends AbstractMessageTransformer
         o.setName(orchestrationName);
         o.setRequest(new Request());
         o.setResponse(new Response());
-        getCoreResponseToken().addOrchestration(o);
+        getCoreResponseToken(msg).addOrchestration(o);
         return o;
     }
     
