@@ -39,18 +39,20 @@ public class XDSValidatorTest {
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
-		xdsValidator.validateAndEnrichClient(pnr);
+		xdsValidator.validateAndEnrichClient(pnr, "1");
 		
 		// then
 		Map<String, String> idMap1 = new HashMap<>();
 		idMap1.put("id", "1111111111");
 		idMap1.put("idType", "1.2.3");
-		verify(xdsValidator.getClient()).send("vm://getecid-pix", idMap1, null, 5000);
+		Map<String, Object> propsMap = new HashMap<>();
+		propsMap.put("MULE_CORRELATION_ID", "1");
+		verify(xdsValidator.getClient()).send("vm://getecid-pix", idMap1, propsMap, 5000);
 		
 		Map<String, String> idMap2 = new HashMap<>();
 		idMap2.put("id", "76cc765a442f410");
 		idMap2.put("idType", "1.3.6.1.4.1.21367.2005.3.7");
-		verify(xdsValidator.getClient()).send("vm://getecid-pix", idMap2, null, 5000);
+		verify(xdsValidator.getClient()).send("vm://getecid-pix", idMap2, propsMap, 5000);
 	}
 	
 	@Test
@@ -60,7 +62,7 @@ public class XDSValidatorTest {
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1234567890");
 		
 		// when
-		xdsValidator.validateAndEnrichClient(pnr);
+		xdsValidator.validateAndEnrichClient(pnr, "1");
 		
 		// then
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
@@ -75,7 +77,7 @@ public class XDSValidatorTest {
 		XDSValidator xdsValidator = configureXDSValidatorForPix(true, "1111111111");
 		
 		// when
-		xdsValidator.validateAndEnrichClient(pnr);
+		xdsValidator.validateAndEnrichClient(pnr, "1");
 		
 		// then
 		ExtrinsicObjectType eo = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest()).get(0);
@@ -90,7 +92,7 @@ public class XDSValidatorTest {
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
-		xdsValidator.validateProviderAndFacility(pnr);
+		xdsValidator.validateProviderAndFacility(pnr, "1");
 		
 		// then no exception should be thrown
 	}
@@ -102,7 +104,7 @@ public class XDSValidatorTest {
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
-		xdsValidator.validateProviderAndFacility(pnr);
+		xdsValidator.validateProviderAndFacility(pnr, "1");
 			
 		// then no exception is thrown
 	}
@@ -114,7 +116,7 @@ public class XDSValidatorTest {
 		XDSValidator xdsValidator = configureXDSValidatorForCSD(true, new HashMap(), new String[] {"vm://get-epid", "vm://get-elid"});
 		
 		// when
-		xdsValidator.validateProviderAndFacility(pnr);
+		xdsValidator.validateProviderAndFacility(pnr, "1");
 			
 		// then no exception is thrown
 	}
@@ -127,7 +129,7 @@ public class XDSValidatorTest {
 		
 		// when
 		try {
-			xdsValidator.validateProviderAndFacility(pnr);
+			xdsValidator.validateProviderAndFacility(pnr, "1");
 			
 		// then
 		} catch (ValidationException e) {
@@ -149,7 +151,7 @@ public class XDSValidatorTest {
 		
 		// when
 		try {
-			xdsValidator.validateProviderAndFacility(pnr);
+			xdsValidator.validateProviderAndFacility(pnr, "1");
 			
 			// then
 			List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
@@ -188,7 +190,7 @@ public class XDSValidatorTest {
 		
 		// when
 		try {
-			xdsValidator.validateProviderAndFacility(pnr);
+			xdsValidator.validateProviderAndFacility(pnr, "1");
 			
 			// then
 			List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());

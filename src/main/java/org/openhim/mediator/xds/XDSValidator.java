@@ -24,13 +24,13 @@ import org.mule.api.MuleContext;
 import org.mule.api.MuleEventContext;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
-import org.mule.api.lifecycle.Callable;
 import org.mule.module.client.MuleClient;
 import org.openhim.mediator.Constants;
+import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 import org.openhim.mediator.pixpdq.PixProcessor;
 
-public class XDSValidator implements Callable {
+public class XDSValidator extends MediatorMuleTransformer {
 	
 	Logger log = Logger.getLogger(this.getClass());
 	
@@ -40,21 +40,26 @@ public class XDSValidator implements Callable {
 	@Override
 	public Object onCall(MuleEventContext eventContext) throws Exception {
 		MuleContext muleContext = eventContext.getMuleContext();
+
 		this.setClient(new MuleClient(muleContext));
+
 		MuleMessage msg = eventContext.getMessage();
+        //getCoreResponseToken will ensure that a correlation id is initialized
+        getCoreResponseToken(msg);
+
 		ProvideAndRegisterDocumentSetRequestType pnr = (ProvideAndRegisterDocumentSetRequestType) msg.getPayload();
 		
-		JAXBElement<ProvideAndRegisterDocumentSetRequestType> newPNR = validateAndEnrichPNR(pnr);
+		JAXBElement<ProvideAndRegisterDocumentSetRequestType> newPNR = validateAndEnrichPNR(pnr, msg.getCorrelationId());
 		msg.setPayload(newPNR);
 		
 		return msg;
 	}
 	
-	public JAXBElement<ProvideAndRegisterDocumentSetRequestType> validateAndEnrichPNR(ProvideAndRegisterDocumentSetRequestType pnr)
+	public JAXBElement<ProvideAndRegisterDocumentSetRequestType> validateAndEnrichPNR(ProvideAndRegisterDocumentSetRequestType pnr, String correlationId)
 			throws ValidationException {
 		
-		validateAndEnrichClient(pnr);
-		validateProviderAndFacility(pnr);
+		validateAndEnrichClient(pnr, correlationId);
+		validateProviderAndFacility(pnr, correlationId);
 		validateTerminology(pnr);
 			
 		int size = pnr.getDocument().size();
@@ -72,10 +77,9 @@ public class XDSValidator implements Callable {
 		return of.createProvideAndRegisterDocumentSetRequest(pnr);
 	}
 
-	protected void validateAndEnrichClient(
-			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {
+	protected void validateAndEnrichClient(ProvideAndRegisterDocumentSetRequestType pnr, String correlationId) throws ValidationException {
 		
-	    PixProcessor pixProcessor = new PixProcessor(client);
+	    PixProcessor pixProcessor = new PixProcessor(client, correlationId);
 		RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
 		String CX = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
 		String submissionECID = pixProcessor.resolveECID(CX);
@@ -100,8 +104,7 @@ public class XDSValidator implements Callable {
 	}
 
 	
-	protected void validateProviderAndFacility(
-			ProvideAndRegisterDocumentSetRequestType pnr) throws ValidationException {
+	protected void validateProviderAndFacility(ProvideAndRegisterDocumentSetRequestType pnr, String correlationId) throws ValidationException {
 		List<ExtrinsicObjectType> eos = InfosetUtil.getExtrinsicObjects(pnr.getSubmitObjectsRequest());
 		for (ExtrinsicObjectType eo : eos) {
 			List<Map<String, SlotType1>> authorClassSlots = null;
@@ -159,8 +162,8 @@ public class XDSValidator implements Callable {
 				// if we have both IDs
 				if (localProviderID != null && localLocationID != null) {
 					try {
-						Map<String, String> epidMap = getEpid(localProviderID, localProviderIDAssigningAuthority);
-						Map<String, String> elidMap = getElid(localLocationID, localLocationIDAssigningAuthority);
+						Map<String, String> epidMap = getEpid(localProviderID, localProviderIDAssigningAuthority, correlationId);
+						Map<String, String> elidMap = getElid(localLocationID, localLocationIDAssigningAuthority, correlationId);
 						
 						if (epidMap == null || elidMap == null) {
 							throw new ValidationException("Query for provider or facility failed.");
@@ -174,7 +177,7 @@ public class XDSValidator implements Callable {
 					}
 				} else if (localProviderID != null) { // if we just have a local provider ID
 					try {
-						Map<String, String> enterpriseIDs = getEpid(localProviderID, localProviderIDAssigningAuthority);
+						Map<String, String> enterpriseIDs = getEpid(localProviderID, localProviderIDAssigningAuthority, correlationId);
 						
 						if (enterpriseIDs == null) {
 							throw new ValidationException("Query for provider failed.");
@@ -187,7 +190,7 @@ public class XDSValidator implements Callable {
 					}
 				} else if (localLocationID != null) { // if we just have a local location ID
 					try {
-						Map<String, String> enterpriseIDs = getElid(localLocationID, localLocationIDAssigningAuthority);
+						Map<String, String> enterpriseIDs = getElid(localLocationID, localLocationIDAssigningAuthority, correlationId);
 						
 						if (enterpriseIDs == null) {
 							throw new ValidationException("Query for location failed.");
@@ -228,12 +231,14 @@ public class XDSValidator implements Callable {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, String> getElid(String localLocationID, String localLocationIDAssigningAuthority) throws MuleException {
+	private Map<String, String> getElid(String localLocationID, String localLocationIDAssigningAuthority, String correlationId) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
+		Map<String, Object> props = new HashMap<>();
 		idMap.put(Constants.LOCAL_LOCATION_MAP_ID, localLocationID);
 		idMap.put(Constants.LOCAL_LOCATION_AUTHORITY_MAP_ID, localLocationIDAssigningAuthority);
+		props.put("MULE_CORRELATION_ID", correlationId);
 		
-		MuleMessage response = client.send("vm://get-elid", idMap, null, 5000);
+		MuleMessage response = client.send("vm://get-elid", idMap, props, 5000);
 		
 		String success = response.getInboundProperty("success");
 		if (success != null && success.equals("true")) {
@@ -244,10 +249,12 @@ public class XDSValidator implements Callable {
 	}
 
 	@SuppressWarnings("unchecked")
-	private Map<String, String> getEpid(String localProviderID, String localProviderIDAssigningAuthority) throws MuleException {
+	private Map<String, String> getEpid(String localProviderID, String localProviderIDAssigningAuthority, String correlationId) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
+		Map<String, Object> props = new HashMap<>();
 		idMap.put(Constants.LOCAL_PROVIDER_MAP_ID, localProviderID);
 		idMap.put(Constants.LOCAL_PROVIDER_AUTHORITY_MAP_ID, localProviderIDAssigningAuthority);
+		props.put("MULE_CORRELATION_ID", correlationId);
 		
 		MuleMessage response = client.send("vm://get-epid", idMap, null, 5000);
 		

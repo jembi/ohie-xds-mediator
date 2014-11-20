@@ -21,12 +21,12 @@ public class CoreResponseTokenEnricher extends MediatorMuleTransformer {
     public Object transformMessage(MuleMessage message, String outputEncoding) throws TransformerException {
         try {
             if (enrichResponse) {
-                setResponseBody(message.getPayloadAsString());
-                getCoreResponseToken().getResponse().setStatus(getHTTPStatus(message));
+                setResponseBody(message, message.getPayloadAsString());
+                getCoreResponseToken(message).getResponse().setStatus(getHTTPStatus(message));
             }
 
             if (orchestrationName!=null && !orchestrationName.isEmpty()) {
-                Orchestration o = fetchOrchestration(orchestrationName);
+                Orchestration o = fetchOrchestration(message, orchestrationName);
                 if (enrichOrchestrationRequest) {
                     o.getRequest().setMethod(getHTTPMethod(message));
                     o.getRequest().setBody(message.getPayloadAsString());
@@ -37,7 +37,9 @@ public class CoreResponseTokenEnricher extends MediatorMuleTransformer {
             }
             
             if (returnTokenAsPayload) {
-                return getCoreResponseToken();
+                CoreResponseToken token = getCoreResponseToken(message);
+                clearToken(message);
+                return token;
             }
         } catch (Exception ex) {
             log.error(ex);

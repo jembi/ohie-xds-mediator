@@ -4,7 +4,6 @@ import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
 import java.io.FileNotFoundException;
-import java.util.Map;
 
 import javax.xml.bind.JAXBException;
 
@@ -25,13 +24,13 @@ public class XDSQueryTransformerTest {
     public void testEnrichAdhocQueryRequest() throws FileNotFoundException, JAXBException, ValidationException, MuleException {
         MuleClient mockClient = mock(MuleClient.class);
         MuleMessage mockResponse = Util.buildMockMuleResponse(true, "testECID");
-        when(mockClient.send(eq("vm://getecid-pix"), anyMap(), isNull(Map.class), anyInt())).thenReturn(mockResponse);
+        when(mockClient.send(eq("vm://getecid-pix"), anyMap(), anyMap(), anyInt())).thenReturn(mockResponse);
 
         AdhocQueryRequest aqRequest = Util.parseRequestFromClass(AdhocQueryRequest.class, "adhocQuery.xml");
         XDSQueryTransformer transformer = new XDSQueryTransformer();
         transformer.setClient(mockClient);
         transformer.setEnterpriseAssigningAuthority("ECID");
-        String originalPID = transformer.enrichAdhocQueryRequest(aqRequest);
+        String originalPID = transformer.enrichAdhocQueryRequest(aqRequest, "1");
 
         assertEquals("1234567890^^^&1.2.3&ISO", originalPID);
         assertEquals("'testECID^^^&ECID&ISO'", InfosetUtil.getSlotValue(aqRequest.getAdhocQuery().getSlot(), "$XDSDocumentEntryPatientId", null));

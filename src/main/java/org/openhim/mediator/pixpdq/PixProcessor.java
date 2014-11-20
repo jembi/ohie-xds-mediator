@@ -14,10 +14,12 @@ public class PixProcessor {
 	Logger log = Logger.getLogger(this.getClass());
 
 	private MuleClient client;
+	private String correlationId;
 
 
-	public PixProcessor(MuleClient client) {
+	public PixProcessor(MuleClient client, String correlationId) {
         this.client = client;
+        this.correlationId = correlationId;
     }
 
 
@@ -40,10 +42,12 @@ public class PixProcessor {
 
 	private String sendPIXMessage(String patId, String assigningAuthority) throws MuleException {
 		Map<String, String> idMap = new HashMap<>();
+		Map<String, Object> props = new HashMap<>();
 		idMap.put("id", patId);
 		idMap.put("idType", assigningAuthority);
+		props.put("MULE_CORRELATION_ID", correlationId);
 
-		MuleMessage response = client.send("vm://getecid-pix", idMap, null, 5000);
+		MuleMessage response = client.send("vm://getecid-pix", idMap, props, 5000);
 		
 		String success = response.getInboundProperty("success");
 		if (success != null && success.equals("true")) {

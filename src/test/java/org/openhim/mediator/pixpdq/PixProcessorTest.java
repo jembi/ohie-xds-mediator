@@ -25,10 +25,10 @@ public class PixProcessorTest {
 
         try {
             MuleMessage mockResponse = Util.buildMockMuleResponse(true, "testECID");
-            when(mockClient.send(eq("vm://getecid-pix"), anyMap(), isNull(Map.class), anyInt())).thenReturn(mockResponse);
-            String result = new PixProcessor(mockClient).resolveECID("1234^^^&TEST&ISO");
+            when(mockClient.send(eq("vm://getecid-pix"), anyMap(), anyMap(), anyInt())).thenReturn(mockResponse);
+            String result = new PixProcessor(mockClient, "1").resolveECID("1234^^^&TEST&ISO");
             assertEquals("testECID", result);
-            verify(mockClient).send(eq("vm://getecid-pix"), eq(idMap), isNull(Map.class), anyInt());
+            verify(mockClient).send(eq("vm://getecid-pix"), eq(idMap), anyMap(), anyInt());
         } catch (MuleException | ValidationException e) {
             fail();
             e.printStackTrace();
