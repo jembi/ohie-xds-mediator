@@ -10,7 +10,6 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/quartz http://www.mulesoft.org/schema/mule/quartz/current/mule-quartz.xsd
 http://www.mulesoft.org/schema/mule/https http://www.mulesoft.org/schema/mule/https/current/mule-https.xsd">
-	<context:property-placeholder location="classpath:xds-mediator.properties, classpath:xds-mediator-override.properties"/>
     <flow name="register_mediatorFlow1" doc:name="register_mediatorFlow1">
         <quartz:inbound-endpoint jobName="Startup" repeatInterval="0" repeatCount="0" responseTimeout="10000" doc:name="Startup" startDelay="3000">
             <quartz:event-generator-job groupName="Register Mediator" jobGroupName="Register Mediator"/>
