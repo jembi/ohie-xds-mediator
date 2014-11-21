@@ -12,6 +12,8 @@ import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
 import org.mule.api.transport.PropertyScope;
 import org.mule.module.client.MuleClient;
+import org.openhim.mediator.Constants;
+import org.openhim.mediator.Util;
 import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 import org.openhim.mediator.pixpdq.PixProcessor;
@@ -38,7 +40,12 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
             //getCoreResponseToken will ensure that a correlation id is initialized
             getCoreResponseToken(message);
             String originalPID = enrichAdhocQueryRequest(aqRequest, message.getCorrelationId());
+
             message.setProperty(SESSION_PROP_REQUEST_PID, originalPID, PropertyScope.SESSION);
+            message.setProperty(Constants.XDS_ITI_18_PROPERTY, Util.marshallJAXBObject("oasis.names.tc.ebxml_regrep.xsd.query._3", aqRequest, false), PropertyScope.SESSION);
+            message.setProperty(Constants.XDS_ITI_18_UNIQUEID_PROPERTY, aqRequest.getAdhocQuery().getId(), PropertyScope.SESSION);
+            message.setProperty(Constants.XDS_ITI_18_PATIENTID_PROPERTY, originalPID, PropertyScope.SESSION);
+
             return aqRequest;
         } catch (MuleException | ValidationException | JAXBException ex) {
             throw new TransformerException(this, ex);

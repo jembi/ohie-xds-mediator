@@ -36,7 +36,14 @@ http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/m
             <logger message="Received response" level="INFO" doc:name="Logger"/>
             <logger message="#[message.payloadAs(java.lang.String)]" level="INFO" doc:name="Logger"/>
             <mulexml:jaxb-xml-to-object-transformer jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object" returnClass="oasis.names.tc.ebxml_regrep.xsd.query._3.AdhocQueryResponse"/>
-            <custom-transformer class="org.openhim.mediator.xds.XDSQueryResponseTransformer" doc:name="Remove ECID and insert request PID"/>
+            <custom-transformer class="org.openhim.mediator.xds.XDSQueryResponseTransformer" doc:name="Remove ECID and insert request PID">
+                <spring:property name="xdsRegistryHost" value="${xds.registry.host}"/>
+                <spring:property name="xdsRegistryPath" value="${xds.registry.path}"/>
+                <spring:property name="xdsRegistryPort" value="${xds.registry.port}"/>
+                <spring:property name="xdsRegistrySecurePort" value="${xds.registry.securePort}"/>
+                <spring:property name="iheSecure" value="${ihe.secure}"/>
+                <spring:property name="requestedAssigningAuthority" value="${pix.requestedAssigningAuthority}"/>
+            </custom-transformer>
             <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML"/>
             <byte-array-to-string-transformer doc:name="Byte Array to String"/>
             <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">

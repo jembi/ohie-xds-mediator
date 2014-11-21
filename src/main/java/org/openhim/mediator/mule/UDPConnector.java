@@ -36,7 +36,6 @@ public class UDPConnector extends AbstractMessageTransformer {
                 clientSocket.receive(responsePacket);
                 String response = new String(buffer);
                 msg.setPayload(response);
-                System.out.println("Response: " + response);
             } else {
                 msg.setPayload(null);
             }
