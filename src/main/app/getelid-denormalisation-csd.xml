@@ -11,10 +11,6 @@ http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/cu
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
-	<context:property-placeholder location="classpath:xds-mediator.properties, classpath:xds-mediator-override.properties"/>
-	<mulexml:namespace-manager includeConfigNamespaces="false">
-		<mulexml:namespace prefix="csd" uri="urn:ihe:iti:csd:2013"/>
-	</mulexml:namespace-manager>
     <flow name="getelid-denormalisation-csdFlow1" doc:name="getelid-denormalisation-csdFlow1">
         <vm:inbound-endpoint exchange-pattern="request-response" path="get-elid" doc:name="VM"/>
         <custom-transformer class="org.openhim.mediator.denormalisation.CSDFacilityQueryGenerator" doc:name="Java"/>

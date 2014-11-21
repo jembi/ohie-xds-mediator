@@ -3,7 +3,7 @@ var http = require('http');
 var HOST = '0.0.0.0'
 var PORT = '12302'
 
-var cannedResponse = "<CSD>\n"
+var cannedResponse = "<CSD xmlns='urn:ihe:iti:csd:2013'>\n"
   + "  <serviceDirectory/>\n"
   + "  <organizationDirectory/>\n"
   + "  <facilityDirectory>\n"
@@ -27,7 +27,7 @@ http.createServer(function(req, res) {
   res.writeHead(200, {
     'Content-Length': cannedResponse.length,
     'Content-Type': 'text/plain' });
-  res.write(cannedResponse);
+  res.end(cannedResponse);
 }).listen(PORT, HOST, function() {
   console.log('CSD server listenting on ' + HOST + ', port ' + PORT);
 });

@@ -13,7 +13,6 @@ http://www.mulesoft.org/schema/mule/jersey http://www.mulesoft.org/schema/mule/j
 http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
 http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd">
-	<context:property-placeholder location="classpath:xds-mediator.properties, classpath:xds-mediator-override.properties"/>
     <flow name="query-encounter-mediationFlow1" doc:name="query-encounter-mediationFlow1">
         <http:inbound-endpoint exchange-pattern="request-response" host="0.0.0.0" port="8081" path="xdsregistry" doc:name="HTTP"/>
         <response>
