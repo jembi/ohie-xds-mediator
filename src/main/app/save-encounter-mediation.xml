@@ -23,14 +23,18 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
             <when expression="#[flowVars.cxf_operation.getLocalPart() == 'DocumentRepository_ProvideAndRegisterDocumentSet-b']">
                 <logger level="INFO" doc:name="Logger" message="Detected provide and register via cxf operation."/>
                 <set-variable variableName="docs" value="#[xpath('//xds:ProvideAndRegisterDocumentSetRequest/xds:Document')]" doc:name="Save Docs"/>
+                <logger message="The saved documents: #[flowVars.docs]" level="INFO" doc:name="Logger"/>
                 <mulexml:jaxb-xml-to-object-transformer returnClass="ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType" jaxbContext-ref="JAXB_Context" doc:name="XML to JAXB Object"/>
+                <logger message="The saved documents: #[flowVars.docs]" level="INFO" doc:name="Logger"/>
                 <component doc:name="Java">
                     <singleton-object class="org.openhim.mediator.xds.XDSValidator">
                         <property key="ecidAssigningAuthority" value="${pix.requestedAssigningAuthorityId}"/>
                     </singleton-object>
                 </component>
+                <logger message="The saved documents: #[flowVars.docs]" level="INFO" doc:name="Logger"/>
                 <mulexml:jaxb-object-to-xml-transformer jaxbContext-ref="JAXB_Context" doc:name="JAXB Object to XML" returnClass="org.w3c.dom.Document" />
                 <mulexml:xml-to-dom-transformer doc:name="XML to DOM" returnClass="org.w3c.dom.Document"/>
+                <logger message="The saved documents: #[flowVars.docs]" level="INFO" doc:name="Logger"/>
                 <custom-transformer class="org.openhim.mediator.xds.InjectDocumentsTransformer" doc:name="Inject Docs..." />
                 <set-property propertyName="SOAPAction" value="urn:ihe:iti:2007:ProvideAndRegisterDocumentSet-b" doc:name="Add SOAP Action"/>
             </when>
@@ -45,9 +49,7 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                 </scripting:component>
             </otherwise>
         </choice>
-        <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true">
-            
-        </cxf:proxy-client>
+        <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true" />
         <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="${xds.repository.host}" method="POST" path="${xds.repository.path}" port="${xds.repository.port}" connector-ref="NoSessionConnector"/>
     </flow>
 </mule>
