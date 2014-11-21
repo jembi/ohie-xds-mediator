@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:ssl="http://www.mulesoft.org/schema/mule/ssl" xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns:udp="http://www.mulesoft.org/schema/mule/udp" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/udp http://www.mulesoft.org/schema/mule/udp/current/mule-udp.xsd
+http://www.mulesoft.org/schema/mule/ssl http://www.mulesoft.org/schema/mule/ssl/current/mule-ssl.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
+    <ssl:connector name="atnaTLSConnector" validateConnections="true" sendBufferSize="0" receiveBufferSize="0" receiveBacklog="0" clientSoTimeout="10000" serverSoTimeout="10000" socketSoLinger="0" doc:name="TLS"/>
+    <flow name="atnasendFlow1" doc:name="atnasendFlow1">
+        <vm:inbound-endpoint exchange-pattern="one-way" path="atna_auditing" doc:name="ATNA Auditing Queue"/>
+        <logger message="The ATNA message logged: #[groovy: message.getPayloadAsString();]" level="INFO" doc:name="Logger"/>
+        <choice doc:name="Choice">
+            <when expression="#[groovy: return ${atna.useTls};]">
+                <logger message="Sending ATNA message via TLS ${atna.host}:${atna.tlsPort}" level="INFO" doc:name="Logger"/>
+                <ssl:outbound-endpoint host="${atna.host}" port="${atna.tlsPort}" responseTimeout="10000" doc:name="SSL (TLS)" connector-ref="atnaTLSConnector"/>
+            </when>
+            <otherwise>
+                <logger message="Sending message via UDP ${atna.host}:${atna.udpPort}" level="INFO" doc:name="Logger"/>
+                <custom-transformer class="org.openhim.mediator.mule.UDPConnector" doc:name="UDP">
+                    <spring:property name="port" value="${atna.udpPort}"/>
+                    <spring:property name="host" value="${atna.host}"/>
+                    <spring:property name="async" value="true"/>
+                </custom-transformer>
+                <!--
+                <udp:outbound-endpoint host="${atna.host}" port="${atna.udpPort}" responseTimeout="10000" doc:name="UDP" />
+                -->
+            </otherwise>
+        </choice>
+    </flow>
+</mule>
