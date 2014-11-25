@@ -9,7 +9,10 @@ http://www.mulesoft.org/schema/mule/udp http://www.mulesoft.org/schema/mule/udp/
 http://www.mulesoft.org/schema/mule/ssl http://www.mulesoft.org/schema/mule/ssl/current/mule-ssl.xsd
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd">
-    <ssl:connector name="atnaTLSConnector" validateConnections="true" sendBufferSize="0" receiveBufferSize="0" receiveBacklog="0" clientSoTimeout="10000" serverSoTimeout="10000" socketSoLinger="0" doc:name="TLS"/>
+    <ssl:connector name="atnaTLSConnector" validateConnections="true" sendBufferSize="0" receiveBufferSize="0" receiveBacklog="0" clientSoTimeout="10000" serverSoTimeout="10000" socketSoLinger="0" doc:name="SSL (TLS)">
+        <ssl:client path="${atna.keystore}" storePassword="${atna.storepassword}"/>
+        <ssl:key-store path="${atna.keystore}" keyPassword="${atna.keypassword}" storePassword="${atna.storepassword}"/>
+    </ssl:connector>
     <flow name="atnasendFlow1" doc:name="atnasendFlow1">
         <vm:inbound-endpoint exchange-pattern="one-way" path="atna_auditing" doc:name="ATNA Auditing Queue"/>
         <logger message="The ATNA message logged: #[groovy: message.getPayloadAsString();]" level="INFO" doc:name="Logger"/>

@@ -94,7 +94,7 @@ public class XDSQueryResponseTransformer extends AbstractMessageTransformer {
         res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, ATNAUtil.getProcessID(), true, ATNAUtil.getHostIP(), (short)2, "DCM", "110153", "Source"));
         res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(buildRegistryPath(), xdsRegistryHost, false, xdsRegistryHost, (short)1, "DCM", "110152", "Destination"));
         
-        res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhie-registry"));
+        res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhim"));
         
         res.getParticipantObjectIdentification().add(
             ATNAUtil.buildParticipantObjectIdentificationType(String.format("%s^^^&%s&ISO", patientId, requestedAssigningAuthority), (short)1, (short)1, "RFC-3881", "2", "PatientNumber", null)
