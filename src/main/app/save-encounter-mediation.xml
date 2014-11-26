@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context"
+<mule xmlns:json="http://www.mulesoft.org/schema/mule/json"
+	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" version="CE-3.5.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
+http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
@@ -14,6 +16,16 @@ http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
     <flow name="save-encounter-mediationFlow1" doc:name="save-encounter-mediationFlow1">
         <http:inbound-endpoint exchange-pattern="request-response" host="0.0.0.0" port="8081" doc:name="HTTP" responseTimeout="30000" path="xdsrepository"/>
+        <response>
+        	<logger level="INFO" doc:name="Logger" message="#[message]"/>
+            <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+                <spring:property name="enrichResponse" value="true"/>
+                <spring:property name="returnTokenAsPayload" value="true"/>
+            </custom-transformer>
+            <json:object-to-json-transformer doc:name="Object to JSON"/>
+            <set-property propertyName="Content-Type" value="application/json+openhim" doc:name="Set Content-Type"/>
+            <logger level="INFO" doc:name="Logger" message="#[payload]"/>
+        </response>
         <cxf:proxy-service doc:name="CXF" payload="body" soapVersion="1.2" namespace="urn:ihe:iti:xds-b:2007" service="DocumentRepository_Service" wsdlLocation="src/main/resources/wsdl/XDS.b_DocumentRepository.wsdl" mtomEnabled="true">
         	<cxf:outInterceptors>
 				<spring:bean class="org.mule.module.cxf.support.CopyAttachmentOutInterceptor"/>
