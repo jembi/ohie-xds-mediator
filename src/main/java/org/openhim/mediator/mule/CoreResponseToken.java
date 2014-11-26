@@ -76,16 +76,16 @@ public class CoreResponseToken implements Serializable {
     public static class Response implements Serializable {
         private static final long serialVersionUID = -2910898384372979044L;
 
-        private String status;
+        private Integer status;
         private Map<String, String> headers = new HashMap<String, String>();
         private String body;
         private Date timestamp = new Date();
 
-        public String getStatus() {
+        public Integer getStatus() {
             return status;
         }
 
-        public void setStatus(String status) {
+        public void setStatus(Integer status) {
             this.status = status;
         }
 

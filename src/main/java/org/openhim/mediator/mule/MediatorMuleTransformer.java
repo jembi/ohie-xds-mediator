@@ -74,11 +74,27 @@ public abstract class MediatorMuleTransformer extends AbstractMessageTransformer
         return o;
     }
     
-    protected static String getHTTPStatus(MuleMessage msg) {
-        return (String)msg.getProperty("http.status", PropertyScope.INBOUND);
+    protected static Integer getHTTPStatus(MuleMessage msg) {
+    	Object status = msg.getProperty("http.status", PropertyScope.OUTBOUND);
+    	if (status == null) {
+    		return null;
+    	} else if (status instanceof Integer) {
+    		Integer statusInt = (Integer) status;
+    		return statusInt;
+    	} else if (status instanceof String) {
+    		String statusStr = (String) status;
+    		return Integer.parseInt(statusStr);
+    	} else {
+    		return null;
+    	}
     }
     
     protected static String getHTTPMethod(MuleMessage msg) {
-        return (String)msg.getProperty("http.method", PropertyScope.INBOUND);
+        Object method = msg.getProperty("http.method", PropertyScope.INBOUND);
+    	if (method != null) {
+    		return (String) method;
+    	} else {
+    		return null;
+    	}
     }
 }
