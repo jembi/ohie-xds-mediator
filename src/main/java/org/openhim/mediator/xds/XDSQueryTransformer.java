@@ -89,8 +89,7 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
 
         resolvedECID = new PixProcessor(client, messsageCorrelationId).resolveECID(pid);
         if (resolvedECID==null || resolvedECID.contains("NullPayload")) {
-            //throw new ValidationException("Failed to resolve patient enterprise identifier");
-            resolvedECID = "34";
+            throw new ValidationException("Failed to resolve patient enterprise identifier");
         }
 
         String ecidCX = resolvedECID + "^^^&" + enterpriseAssigningAuthority + "&ISO";
@@ -112,7 +111,7 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
         res.setEventIdentification(eid);
         
         res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, "client", true, sourceIP, (short)2, "DCM", "110153", "Source"));
-        res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, ATNAUtil.getProcessID(), false, ATNAUtil.getHostIP(), (short)1, "DCM", "110152", "Destination"));
+        res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, ATNAUtil.getProcessID(), false, ATNAUtil.getHostIP(), (short)2, "DCM", "110152", "Destination"));
         
         res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhim"));
         
