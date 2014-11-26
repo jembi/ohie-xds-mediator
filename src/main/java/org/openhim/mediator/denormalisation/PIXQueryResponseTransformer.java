@@ -62,7 +62,7 @@ public class PIXQueryResponseTransformer extends AbstractMessageTransformer {
 			
 			pid = idMap.get("id");
 			
-			//message.setProperty(Constants.ASSIGNING_AUTHORITY_OID_PROPERTY_NAME, idMap.get("assigningAuthority"), PropertyScope.SESSION);
+			message.setProperty(Constants.ASSIGNING_AUTHORITY_OID_PROPERTY_NAME, idMap.get("assigningAuthority"), PropertyScope.SESSION);
 			
 			return pid;
 			
@@ -123,7 +123,7 @@ public class PIXQueryResponseTransformer extends AbstractMessageTransformer {
 		res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(getPixSendingFacility() + "|" + getPixSendingApplication(), ATNAUtil.getProcessID(), true, ATNAUtil.getHostIP(), (short)2, "DCM", "110153", "Source"));
 		res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(getPixReceivingFacility() + "|" + getPixReceivingApplication(), "2100", false, pixManagerHost, (short)1, "DCM", "110152", "Destination"));
 		
-		res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhie-cr"));
+		res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhim"));
 		
 		res.getParticipantObjectIdentification().add(
 			ATNAUtil.buildParticipantObjectIdentificationType(String.format("%s^^^&%s&ISO", patientId, requestedAssigningAuthority), (short)1, (short)1, "RFC-3881", "2", "PatientNumber", null)
