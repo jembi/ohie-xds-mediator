@@ -351,7 +351,7 @@ public class XDSValidator extends MediatorMuleTransformer {
         
         res.getParticipantObjectIdentification().add(
             ATNAUtil.buildParticipantObjectIdentificationType(
-                uniqueId, (short)2, (short)20, "IHE Transactions", "ITI-41", "Provide and Register Document Set-b", request, pod
+                uniqueId, (short)2, (short)20, "IHE XDS Metadata", "urn:uuid:a54d6aa5-d40d-43f9-88c5-b4633d873bdd", "submission set classificationNode", request, pod
             )
         );
         
