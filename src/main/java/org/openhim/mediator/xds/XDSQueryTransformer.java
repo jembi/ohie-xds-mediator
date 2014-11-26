@@ -49,40 +49,42 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
             
             //getCoreResponseToken will ensure that a correlation id is initialized
             getCoreResponseToken(message);
-            String originalPID = enrichAdhocQueryRequest(aqRequest, message.getCorrelationId());
+            String sourceIP = message.getInboundProperty("X-Forwarded-For")!=null ? (String)message.getInboundProperty("X-Forwarded-For") : "unknown";
 
-            message.setProperty(SESSION_PROP_REQUEST_PID, originalPID, PropertyScope.SESSION);
+            String pid = InfosetUtil.getSlotValue(aqRequest.getAdhocQuery().getSlot(), "$XDSDocumentEntryPatientId", null);
+            if (pid==null) {
+                throw new ValidationException("No patient identifiers found in XDS.b adhoc query request");
+            }
+
+            try {
+                //generate audit message
+                //we'll audit the original request before enrichment
+                String request = Util.marshallJAXBObject("oasis.names.tc.ebxml_regrep.xsd.query._3", aqRequest, false);
+                String uniqueId = aqRequest.getAdhocQuery().getId();
+                ATNAUtil.dispatchAuditMessage(muleContext, generateATNAMessage(request, pid, uniqueId, sourceIP, true));
+                log.info("Dispatched ATNA message");
+            } catch (Exception e) {
+                //If the auditing breaks, it shouldn't break the flow, so catch and log
+                log.error("Failed to dispatch ATNA message", e);
+            }
+        
+            enrichAdhocQueryRequest(aqRequest, message.getCorrelationId(), sourceIP);
+
+            message.setProperty(SESSION_PROP_REQUEST_PID, pid, PropertyScope.SESSION);
             message.setProperty(Constants.XDS_ITI_18_PROPERTY, Util.marshallJAXBObject("oasis.names.tc.ebxml_regrep.xsd.query._3", aqRequest, false), PropertyScope.SESSION);
             message.setProperty(Constants.XDS_ITI_18_UNIQUEID_PROPERTY, aqRequest.getAdhocQuery().getId(), PropertyScope.SESSION);
-            message.setProperty(Constants.XDS_ITI_18_PATIENTID_PROPERTY, originalPID, PropertyScope.SESSION);
+            message.setProperty(Constants.XDS_ITI_18_PATIENTID_PROPERTY, pid, PropertyScope.SESSION);
 
             return aqRequest;
         } catch (MuleException | ValidationException | JAXBException ex) {
             throw new TransformerException(this, ex);
-        } finally {
         }
     }
     
-    protected String enrichAdhocQueryRequest(AdhocQueryRequest aqRequest, String messsageCorrelationId) throws ValidationException, JAXBException {
+    protected void enrichAdhocQueryRequest(AdhocQueryRequest aqRequest, String messsageCorrelationId, String sourceIP) throws ValidationException, JAXBException {
         String resolvedECID = null;
-
         String pid = InfosetUtil.getSlotValue(aqRequest.getAdhocQuery().getSlot(), "$XDSDocumentEntryPatientId", null);
-        if (pid==null) {
-            throw new ValidationException("No patient identifiers found in XDS.b adhoc query request");
-        }
 
-        try {
-            //generate audit message
-            //we'll audit the original request before enrichment
-            String request = Util.marshallJAXBObject("oasis.names.tc.ebxml_regrep.xsd.query._3", aqRequest, false);
-            String uniqueId = aqRequest.getAdhocQuery().getId();
-            ATNAUtil.dispatchAuditMessage(muleContext, generateATNAMessage(request, pid, uniqueId, true));
-            log.info("Dispatched ATNA message");
-        } catch (Exception e) {
-            //If the auditing breaks, it shouldn't break the flow, so catch and log
-            log.error("Failed to dispatch ATNA message", e);
-        }
-        
         pid = pid.replaceAll("'", "").replaceAll("\\(", "").replaceAll("\\)", "");
 
         resolvedECID = new PixProcessor(client, messsageCorrelationId).resolveECID(pid);
@@ -93,14 +95,12 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
 
         String ecidCX = resolvedECID + "^^^&" + enterpriseAssigningAuthority + "&ISO";
         InfosetUtil.addOrOverwriteSlot(aqRequest.getAdhocQuery(), "$XDSDocumentEntryPatientId", "'" + ecidCX + "'");
-
-        return pid;
     }
 
 
     /* Auditing */
     
-    protected String generateATNAMessage(String request, String patientId, String uniqueId, boolean outcome) throws JAXBException {
+    protected String generateATNAMessage(String request, String patientId, String uniqueId, String sourceIP, boolean outcome) throws JAXBException {
         AuditMessage res = new AuditMessage();
         
         EventIdentificationType eid = new EventIdentificationType();
@@ -111,8 +111,7 @@ public class XDSQueryTransformer extends MediatorMuleTransformer {
         eid.setEventOutcomeIndicator(outcome ? BigInteger.ONE : BigInteger.ZERO);
         res.setEventIdentification(eid);
         
-        //TODO Source IP address
-        res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, "client", true, ATNAUtil.getHostIP(), (short)2, "DCM", "110153", "Source"));
+        res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, "client", true, sourceIP, (short)2, "DCM", "110153", "Source"));
         res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, ATNAUtil.getProcessID(), false, ATNAUtil.getHostIP(), (short)1, "DCM", "110152", "Destination"));
         
         res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhim"));
