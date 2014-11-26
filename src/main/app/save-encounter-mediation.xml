@@ -3,7 +3,7 @@
 <mule xmlns:json="http://www.mulesoft.org/schema/mule/json"
 	xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml" xmlns:jersey="http://www.mulesoft.org/schema/mule/jersey" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
-	xmlns:spring="http://www.springframework.org/schema/beans" version="CE-3.5.0"
+	xmlns:spring="http://www.springframework.org/schema/beans" version="EE-3.5.1"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/json http://www.mulesoft.org/schema/mule/json/current/mule-json.xsd
 http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
@@ -61,6 +61,11 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
                 </scripting:component>
             </otherwise>
         </choice>
+        <response>
+            <custom-transformer class="org.openhim.mediator.xds.XDSProvideAndRegisterResponseTransformer" doc:name="Response Processor">
+                <spring:property name="xdsRepositoryHost" value="${xds.repository.host}"/>
+            </custom-transformer>
+        </response>
         <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true" />
         <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="${xds.repository.host}" method="POST" path="${xds.repository.path}" port="${xds.repository.port}" connector-ref="NoSessionConnector"/>
     </flow>
