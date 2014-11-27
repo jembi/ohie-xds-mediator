@@ -2,17 +2,12 @@ package org.openhim.mediator.xds;
 
 import java.io.CharArrayReader;
 import java.io.IOException;
-import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
 import org.dom4j.DocumentHelper;
 import org.jfree.util.Log;
@@ -38,15 +33,55 @@ public class InjectDocumentsTransformer extends AbstractMessageTransformer {
 		NodeList docs = doc.getElementsByTagNameNS("urn:ihe:iti:xds-b:2007", "Document");
 		
 		// remove docs
+		List<Node> nodesToRemove = new ArrayList<Node>();
 		for (int i = 0; i < docs.getLength(); i++) {
 			Node node = docs.item(i);
+			nodesToRemove.add(node);
+		}
+		for (Node node : nodesToRemove) {
 			root.removeChild(node);
+			logger.info("Removed old document element");
 		}
 		
 		// Add saved docs
-		org.dom4j.Element element4j = message.getInvocationProperty("docs");
+		Object elementsObj = message.getInvocationProperty("docs");
+		if (elementsObj instanceof org.dom4j.Element) {
+			org.dom4j.Element element4j = message.getInvocationProperty("docs");
+			Element element = convertDom4jElementToW3C(element4j);
+			Node addedNode = root.appendChild(doc.importNode(element, true));
+			//removeDuplicateNS(element, addedNode);
+		} else if (elementsObj instanceof List<?>) {
+			List<org.dom4j.Element> elements = (List) elementsObj;
+			for (org.dom4j.Element element4j : elements) {
+				Element element = convertDom4jElementToW3C(element4j);
+				Node addedNode = root.appendChild(doc.importNode(element, true));
+				//removeDuplicateNS(element, addedNode);
+			}
+		}
 		
-		// Convert dom4j document to w3c document
+		return message;
+	}
+
+	private void removeDuplicateNS(Element element, Node addedNode) {
+		// Warning nasty hack ahead!! - deleting duplicate namespaces
+		boolean hasNSBeenSeenAlready = false;
+		NamedNodeMap attributes = addedNode.getAttributes();
+		for (int i = 0 ; i < attributes.getLength() ; i++) {
+			logger.info("Looping through attribute " + i);
+			Attr attr = (Attr) attributes.item(i);
+			if (attr.getValue().equals("urn:ihe:iti:xds-b:2007")) {
+				if (hasNSBeenSeenAlready) {
+					logger.info("Attempting to remove Attr...");
+					element.removeChild(attr);
+				} else {
+					hasNSBeenSeenAlready = true;	
+				}
+			}
+		}
+	}
+
+	private Element convertDom4jElementToW3C(org.dom4j.Element element4j) {
+		// Convert dom4j document to w3c document - why mule why?!?
 		org.dom4j.Document doc4j = DocumentHelper.createDocument((org.dom4j.Element) element4j.detach());
 		
 		Document docw3c = null;
@@ -66,25 +101,7 @@ public class InjectDocumentsTransformer extends AbstractMessageTransformer {
 		}
 		
 		Element element = docw3c.getDocumentElement();
-		Node addedNode = root.appendChild(doc.importNode(element, true));
-		
-		// Warning nasty hack ahead!! - deleting duplicate namespaces - oh, and why does mule use so many XML frameworks??
-		boolean hasNSBeenSeenAlready = false;
-		NamedNodeMap attributes = addedNode.getAttributes();
-		for (int i = 0 ; i < attributes.getLength() ; i++) {
-			logger.info("Looping through attribute " + i);
-			Attr attr = (Attr) attributes.item(i);
-			if (attr.getValue().equals("urn:ihe:iti:xds-b:2007")) {
-				if (hasNSBeenSeenAlready) {
-					logger.info("Attempting to remove Attr...");
-					element.removeChild(attr);
-				} else {
-					hasNSBeenSeenAlready = true;	
-				}
-			}
-		}
-		
-		return message;
+		return element;
 	}
 
 }
