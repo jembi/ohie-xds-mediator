@@ -30,7 +30,7 @@ public class PixProcessor {
 		
 		try {
 			String ecid = sendPIXMessage(patId, assigningAuthority);
-			if (ecid == null) {
+			if (ecid==null || ecid.contains("NullPayload")) {
 				throw new ValidationException("Query for client submission set ecid failed.");
 			}
 			return ecid;
