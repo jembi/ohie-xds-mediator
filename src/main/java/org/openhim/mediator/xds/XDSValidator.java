@@ -1,9 +1,12 @@
 package org.openhim.mediator.xds;
 
+import ihe.iti.atna.AuditMessage;
+import ihe.iti.atna.EventIdentificationType;
 import ihe.iti.xds_b._2007.ObjectFactory;
 import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType;
 import ihe.iti.xds_b._2007.ProvideAndRegisterDocumentSetRequestType.Document;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,8 +27,12 @@ import org.mule.api.MuleContext;
 import org.mule.api.MuleEventContext;
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
+import org.mule.api.transport.PropertyScope;
 import org.mule.module.client.MuleClient;
+import org.openhim.mediator.ATNAUtil;
+import org.openhim.mediator.ATNAUtil.ParticipantObjectDetail;
 import org.openhim.mediator.Constants;
+import org.openhim.mediator.Util;
 import org.openhim.mediator.mule.MediatorMuleTransformer;
 import org.openhim.mediator.orchestration.exceptions.ValidationException;
 import org.openhim.mediator.pixpdq.PixProcessor;
@@ -35,6 +42,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 	Logger log = Logger.getLogger(this.getClass());
 	
 	private String ecidAssigningAuthority = "";
+	private String homeCommunityId;
 	private MuleClient client;
 	
 	@Override
@@ -48,10 +56,32 @@ public class XDSValidator extends MediatorMuleTransformer {
         getCoreResponseToken(msg);
 
 		ProvideAndRegisterDocumentSetRequestType pnr = (ProvideAndRegisterDocumentSetRequestType) msg.getPayload();
+
+        RegistryPackageType regPac = InfosetUtil.getRegistryPackage(pnr.getSubmitObjectsRequest(), XDSConstants.UUID_XDSSubmissionSet);
+        String uniqueId = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_uniqueId, regPac);
+        String pid = InfosetUtil.getExternalIdentifierValue(XDSConstants.UUID_XDSSubmissionSet_patientId, regPac);
+
+        try {
+            //generate audit message
+            //we'll audit the original request before enrichment
+            String request = Util.marshallJAXBObject("ihe.iti.xds_b._2007", new ObjectFactory().createProvideAndRegisterDocumentSetRequest(pnr), false);
+            String sourceIP = msg.getInboundProperty("X-Forwarded-For")!=null ? (String)msg.getInboundProperty("X-Forwarded-For") : "unknown";
+
+            ATNAUtil.dispatchAuditMessage(muleContext, generateATNAMessage(request, pid, uniqueId, sourceIP, true));
+            log.info("Dispatched ATNA message");
+        } catch (Exception e) {
+            //If the auditing breaks, it shouldn't break the flow, so catch and log
+            log.error("Failed to dispatch ATNA message", e);
+        }
 		
 		JAXBElement<ProvideAndRegisterDocumentSetRequestType> newPNR = validateAndEnrichPNR(pnr, msg.getCorrelationId());
 		msg.setPayload(newPNR);
 		
+        msg.setProperty("audit", Boolean.TRUE, PropertyScope.SESSION);
+        msg.setProperty(Constants.XDS_ITI_41, Util.marshallJAXBObject("ihe.iti.xds_b._2007", newPNR, false), PropertyScope.SESSION);
+        msg.setProperty(Constants.XDS_ITI_41_UNIQUEID, uniqueId, PropertyScope.SESSION);
+        msg.setProperty(Constants.XDS_ITI_41_PATIENTID, pid, PropertyScope.SESSION);
+
 		return msg;
 	}
 	
@@ -292,7 +322,43 @@ public class XDSValidator extends MediatorMuleTransformer {
 		}
 		return classificationMaps;
 	}
+
+    /* Auditing */
+    
+    protected String generateATNAMessage(String request, String patientId, String uniqueId, String sourceIP, boolean outcome) throws JAXBException {
+        AuditMessage res = new AuditMessage();
+        
+        EventIdentificationType eid = new EventIdentificationType();
+        eid.setEventID( ATNAUtil.buildCodedValueType("DCM", "110107", "Import") );
+        eid.setEventActionCode("C");
+        eid.setEventDateTime( ATNAUtil.newXMLGregorianCalendar() );
+        eid.getEventTypeCode().add( ATNAUtil.buildCodedValueType("IHE Transactions", "ITI-41", "Provide and Register Document Set-b") );
+        eid.setEventOutcomeIndicator(outcome ? BigInteger.ONE : BigInteger.ZERO);
+        res.setEventIdentification(eid);
+        
+        res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, "client", true, sourceIP, (short)2, "DCM", "110153", "Source"));
+        res.getActiveParticipant().add( ATNAUtil.buildActiveParticipant(ATNAUtil.WSA_REPLYTO_ANON, ATNAUtil.getProcessID(), false, ATNAUtil.getHostIP(), (short)2, "DCM", "110152", "Destination"));
+        
+        res.getAuditSourceIdentification().add(ATNAUtil.buildAuditSource("openhim"));
+        
+        res.getParticipantObjectIdentification().add(
+            ATNAUtil.buildParticipantObjectIdentificationType(patientId, (short)1, (short)1, "RFC-3881", "2", "PatientNumber", null)
+        );
+        
+        List<ParticipantObjectDetail> pod = new ArrayList<ParticipantObjectDetail>();
+        pod.add(new ParticipantObjectDetail("QueryEncoding", "UTF-8".getBytes()));
+        if (homeCommunityId!=null) pod.add(new ParticipantObjectDetail("urn:ihe:iti:xca:2010:homeCommunityId", homeCommunityId.getBytes()));
+        
+        res.getParticipantObjectIdentification().add(
+            ATNAUtil.buildParticipantObjectIdentificationType(
+                uniqueId, (short)2, (short)20, "IHE XDS Metadata", "urn:uuid:a54d6aa5-d40d-43f9-88c5-b4633d873bdd", "submission set classificationNode", request, pod
+            )
+        );
+        
+        return ATNAUtil.marshallATNAObject(res);
+    }
 	
+
 	public String getEcidAssigningAuthority() {
 		return ecidAssigningAuthority;
 	}
