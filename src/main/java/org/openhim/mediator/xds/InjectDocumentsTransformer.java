@@ -14,10 +14,8 @@ import org.jfree.util.Log;
 import org.mule.api.MuleMessage;
 import org.mule.api.transformer.TransformerException;
 import org.mule.transformer.AbstractMessageTransformer;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
@@ -48,36 +46,16 @@ public class InjectDocumentsTransformer extends AbstractMessageTransformer {
 		if (elementsObj instanceof org.dom4j.Element) {
 			org.dom4j.Element element4j = message.getInvocationProperty("docs");
 			Element element = convertDom4jElementToW3C(element4j);
-			Node addedNode = root.appendChild(doc.importNode(element, true));
-			//removeDuplicateNS(element, addedNode);
+			root.appendChild(doc.importNode(element, true));
 		} else if (elementsObj instanceof List<?>) {
 			List<org.dom4j.Element> elements = (List) elementsObj;
 			for (org.dom4j.Element element4j : elements) {
 				Element element = convertDom4jElementToW3C(element4j);
-				Node addedNode = root.appendChild(doc.importNode(element, true));
-				//removeDuplicateNS(element, addedNode);
+				root.appendChild(doc.importNode(element, true));
 			}
 		}
 		
 		return message;
-	}
-
-	private void removeDuplicateNS(Element element, Node addedNode) {
-		// Warning nasty hack ahead!! - deleting duplicate namespaces
-		boolean hasNSBeenSeenAlready = false;
-		NamedNodeMap attributes = addedNode.getAttributes();
-		for (int i = 0 ; i < attributes.getLength() ; i++) {
-			logger.info("Looping through attribute " + i);
-			Attr attr = (Attr) attributes.item(i);
-			if (attr.getValue().equals("urn:ihe:iti:xds-b:2007")) {
-				if (hasNSBeenSeenAlready) {
-					logger.info("Attempting to remove Attr...");
-					element.removeChild(attr);
-				} else {
-					hasNSBeenSeenAlready = true;	
-				}
-			}
-		}
 	}
 
 	private Element convertDom4jElementToW3C(org.dom4j.Element element4j) {
