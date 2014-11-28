@@ -286,7 +286,7 @@ public class XDSValidator extends MediatorMuleTransformer {
 		idMap.put(Constants.LOCAL_PROVIDER_AUTHORITY_MAP_ID, localProviderIDAssigningAuthority);
 		props.put("MULE_CORRELATION_ID", correlationId);
 		
-		MuleMessage response = client.send("vm://get-epid", idMap, null, 5000);
+		MuleMessage response = client.send("vm://get-epid", idMap, props, 5000);
 		
 		String success = response.getInboundProperty("success");
 		if (success != null && success.equals("true")) {

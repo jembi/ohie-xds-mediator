@@ -15,7 +15,12 @@ import org.openhim.mediator.mule.CoreResponseToken.Request;
 import org.openhim.mediator.mule.CoreResponseToken.Response;
 
 public abstract class MediatorMuleTransformer extends AbstractMessageTransformer implements Callable {
+
+    private static final String CORRELATION_ID_PREFIX = "OPENHIM-MEDIATOR-TRX-";
+    
     private static final Map<String, CoreResponseToken> tokenStore = new ConcurrentHashMap<>();
+    private static final Map<String, String> idStore = new ConcurrentHashMap<>();
+
 
 	@Override
 	public Object onCall(MuleEventContext eventContext) throws Exception {
@@ -29,8 +34,8 @@ public abstract class MediatorMuleTransformer extends AbstractMessageTransformer
     }
 
     protected CoreResponseToken getCoreResponseToken(MuleMessage msg) {
-        if (msg.getCorrelationId()==null) {
-            msg.setCorrelationId(UUID.randomUUID().toString());
+        if (msg.getCorrelationId()==null || !msg.getCorrelationId().startsWith(CORRELATION_ID_PREFIX)) {
+            initCorrelationId(msg);
         }
 
         if (!tokenStore.containsKey(msg.getCorrelationId())) {
@@ -39,10 +44,27 @@ public abstract class MediatorMuleTransformer extends AbstractMessageTransformer
         return tokenStore.get(msg.getCorrelationId());
     }
     
+    /**
+     * Initialize a correlation id for the specified message.
+     * 
+     * The message's root id will be first be used to see if a correlation id
+     * is already linked to that unique id, otherwise a new correlation id will be generated.
+     */
+    private void initCorrelationId(MuleMessage msg) {
+        String corrId = idStore.get(msg.getMessageRootId());
+        if (corrId!=null) {
+            msg.setCorrelationId(corrId);
+        } else {
+            msg.setCorrelationId(CORRELATION_ID_PREFIX + UUID.randomUUID().toString());
+            idStore.put(msg.getMessageRootId(), msg.getCorrelationId());
+        }
+    }
+    
     //Clear out the token from the memory store
     protected void clearToken(MuleMessage message) {
         try {
             tokenStore.remove(message.getCorrelationId());
+            idStore.remove(message.getMessageRootId());
         } catch (Exception ex) { /* Quiet you! */ }
     }
 

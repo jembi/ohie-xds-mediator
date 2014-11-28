@@ -62,11 +62,19 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
             </otherwise>
         </choice>
         <response>
+            <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+                <spring:property name="orchestrationName" value="XDS.b Repository"/>
+                <spring:property name="enrichOrchestrationResponse" value="true"/>
+            </custom-transformer>
             <custom-transformer class="org.openhim.mediator.xds.XDSProvideAndRegisterResponseTransformer" doc:name="Response Processor">
                 <spring:property name="xdsRepositoryHost" value="${xds.repository.host}"/>
             </custom-transformer>
         </response>
         <cxf:proxy-client doc:name="CXF" payload="body" soapVersion="1.2" mtomEnabled="true" />
+        <custom-transformer class="org.openhim.mediator.mule.CoreResponseTokenEnricher" doc:name="Enrich Response Token">
+            <spring:property name="orchestrationName" value="XDS.b Repository"/>
+            <spring:property name="enrichOrchestrationRequest" value="true"/>
+        </custom-transformer>
         <http:outbound-endpoint exchange-pattern="request-response" doc:name="HTTP"  responseTimeout="30000" host="${xds.repository.host}" method="POST" path="${xds.repository.path}" port="${xds.repository.port}" connector-ref="NoSessionConnector"/>
     </flow>
 </mule>
