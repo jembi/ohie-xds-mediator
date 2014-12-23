@@ -13,17 +13,20 @@ var cannedResponse = 'MSH|^~\\&|PAT_IDENTITY_X_REF_MGR_MISYS|ALLSCRIPTS|PACS_FUJ
 
 net.createServer(function(c) {
 
+  buffer = "";
+
   c.on('error', function(err) {
     console.log(err);
   });
 
   c.on('data', function(chunk) {
-    console.log('Recieved message chunk:\n' + chunk + '\n\n');
-
-    if (chunk.toString().indexOf(footer) != -1) {
+    console.log('Recieved message chunk:\n' + chunk + '\n');
+    buffer += chunk;
+    if (buffer.indexOf(footer) > -1) {
+      console.log("Received full message. Sending response...");
       c.end(header + cannedResponse + footer);
     }
-  })
+  });
 
 }).listen(PORT, HOST, function() {
   console.log('PIX server listenting on ' + HOST + ', port ' + PORT);
